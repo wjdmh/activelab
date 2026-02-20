@@ -1,0 +1,353 @@
+@import "tailwindcss";
+
+@theme {
+  /* === ON-U Design System — Toss Product Identity === */
+
+  /* Primary — Toss Blue */
+  --color-primary: #3182F6;
+  --color-primary-hover: #1B6CF2;
+  --color-primary-light: #E8F3FF;
+  --color-primary-50: #F0F7FF;
+  --color-primary-gradient: #4B95F9;
+  --color-primary-dark: #1A5DC8;
+
+  /* Accent — Warm for highlights */
+  --color-accent: #FFC558;
+  --color-accent-light: #FFF8E8;
+  --color-accent-gradient: #FFD480;
+
+  /* Text — Toss Ink System */
+  --color-text-primary: #191F28;
+  --color-text-secondary: #333D4B;
+  --color-text-caption: #8B95A1;
+  --color-text-disabled: #D1D6DB;
+
+  /* Backgrounds — Toss Gray System */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-page: #F2F4F6;
+  --color-bg-card: #FFFFFF;
+  --color-bg-warm: #F2F4F6;
+  --color-bg-elevated: #FFFFFF;
+  --color-border-card: #E5E8EB;
+
+  /* Semantic Colors */
+  --color-success: #34C759;
+  --color-success-light: #E8FAF0;
+  --color-warning: #FF9F0A;
+  --color-warning-light: #FFF4E0;
+  --color-danger: #FF3B30;
+  --color-danger-light: #FFF0EF;
+
+  /* Typography Scale — Senior Readable, Toss-aligned */
+  --font-size-xs: 0.75rem;
+  --font-size-caption: 0.875rem;
+  --font-size-body: 1.0625rem;
+  --font-size-heading: 1.375rem;
+  --font-size-display: 1.625rem;
+  --font-size-hero: 2rem;
+
+  /* Spacing */
+  --spacing-touch: 3rem;
+
+  /* Border radius — Toss rounded */
+  --radius-xs: 0.5rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
+  --radius-full: 9999px;
+
+  /* Shadows — Toss layered elevation */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 8px 28px rgba(0, 0, 0, 0.12);
+  --shadow-button: 0 4px 14px rgba(49, 130, 246, 0.3);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font-family: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR",
+    "Malgun Gothic", sans-serif;
+  font-size: var(--font-size-body);
+  line-height: 1.6;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* Safe area padding for PWA */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-card);
+  border-radius: var(--radius-full);
+}
+
+/* Focus visible */
+*:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Selection */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* Webkit autofill styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 40px white inset !important;
+  -webkit-text-fill-color: var(--color-text-primary) !important;
+  caret-color: var(--color-text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Smooth scroll on iOS */
+.scroll-smooth {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Skeleton shimmer animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #F2F4F6 25%, #E5E8EB 50%, #F2F4F6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Bottom safe area */
+.safe-area-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 8px);
+}
+
+/* =============================================
+   ON-U Fluid Core Animation (Liquid Blob)
+   ============================================= */
+
+@keyframes fluid-morph {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+    transform: rotate(90deg) scale(1.02);
+  }
+  50% {
+    border-radius: 50% 60% 30% 60% / 30% 50% 70% 50%;
+    transform: rotate(180deg) scale(0.98);
+  }
+  75% {
+    border-radius: 60% 30% 50% 40% / 60% 40% 60% 30%;
+    transform: rotate(270deg) scale(1.01);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes float-y {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.3;
+  }
+}
+
+@keyframes dot-float-1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(6px, -10px); }
+}
+
+@keyframes dot-float-2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-8px, 6px); }
+}
+
+@keyframes dot-float-3 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(4px, 8px); }
+}
+
+.fluid-core {
+  animation: fluid-morph 8s ease-in-out infinite;
+}
+
+.pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.float-y {
+  animation: float-y 3s ease-in-out infinite;
+}
+
+.breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.dot-float-1 {
+  animation: dot-float-1 5s ease-in-out infinite;
+}
+
+.dot-float-2 {
+  animation: dot-float-2 6s ease-in-out infinite;
+}
+
+.dot-float-3 {
+  animation: dot-float-3 4s ease-in-out infinite;
+}
+
+/* Typing dots */
+@keyframes typing-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, #3182F6 0%, #4B95F9 50%, #6BABFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Toss-style card hover */
+.toss-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toss-card:active {
+  transform: scale(0.98);
+}
+
+/* Chat bubble tail */
+.bubble-tail-left::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -6px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  border-radius: 0 0 0 4px;
+}
+
+.bubble-tail-right::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  border-radius: 0 0 4px 0;
+}
+
+/* Step progress connector */
+.step-connector {
+  position: relative;
+}
+
+.step-connector::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border-card);
+  transform: translateY(-50%);
+}
+
+.step-connector.active::after {
+  background: var(--color-primary);
+}

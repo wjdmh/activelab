@@ -24,7 +24,7 @@ function LoginContent() {
 
     // 이미 로그인되어 있으면 next로 리다이렉트
     useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
+        supabase.auth.getUser().then(({ data: { user } }: { data: { user: unknown } }) => {
             if (user) router.replace(next);
         }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAssessmentStore } from "@/stores/useAssessmentStore";
 import { useCoachStore } from "@/stores/useCoachStore";
+import { useWorkoutStore } from "@/stores/useWorkoutStore";
 import { useRouter } from "next/navigation";
 
 export function AuthInitializer() {
@@ -67,6 +68,7 @@ export function AuthInitializer() {
                         useUserStore.getState().resetAll();
                         useAssessmentStore.getState().resetAssessment();
                         useCoachStore.getState().clearMessages();
+                        useWorkoutStore.getState().resetPlan();
                         router.replace('/');
                     }
                     // TOKEN_REFRESHED, TOKEN_REFRESH_FAILED 등은 조용히 무시

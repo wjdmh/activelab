@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAssessmentStore } from "@/stores/useAssessmentStore";
 import { useHydration } from "@/hooks/useHydration";
+import { useAuth } from "@/hooks/useAuth";
 
 const NAV_ITEMS = [
   {
@@ -64,11 +65,13 @@ export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const hydrated = useHydration();
+  const isAuthenticated = useAuth();
   const hasCompleted = useUserStore((s) => s.hasCompletedAssessment);
   const assessmentResult = useAssessmentStore((s) => s.result);
   const proactiveQ = useAssessmentStore((s) => s.proactiveQuestion);
 
   if (!hydrated) return null;
+  if (!isAuthenticated) return null;
   if (pathname?.startsWith("/assessment")) return null;
   if (pathname?.startsWith("/player")) return null;
   if (!hasCompleted && !assessmentResult) return null;

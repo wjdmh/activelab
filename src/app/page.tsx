@@ -12,6 +12,7 @@ import { useWorkoutStore } from "@/stores/useWorkoutStore";
 import { useAssessmentStore } from "@/stores/useAssessmentStore";
 import { useAchievementStore } from "@/stores/useAchievementStore";
 import { useHydration } from "@/hooks/useHydration";
+import { useAuth } from "@/hooks/useAuth";
 
 function getTodayIndex(): number {
   const jsDay = new Date().getDay();
@@ -581,11 +582,18 @@ function getGreeting(): string {
 
 export default function HomePage() {
   const hydrated = useHydration();
+  const isAuthenticated = useAuth();
   const hasCompleted = useUserStore((s) => s.hasCompletedAssessment);
   const assessmentResult = useAssessmentStore((s) => s.result);
 
-  if (!hydrated) return null;
+  if (!hydrated || isAuthenticated === null) return null;
 
+  // 비로그인 → 항상 랜딩 페이지
+  if (!isAuthenticated) {
+    return <LandingScreen />;
+  }
+
+  // 로그인했지만 평가 미완료 → 랜딩 페이지
   if (!hasCompleted && !assessmentResult) {
     return <LandingScreen />;
   }

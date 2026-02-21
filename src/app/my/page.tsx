@@ -476,6 +476,9 @@ export default function MyPage() {
       await supabase.auth.signOut();
       resetUser();
       resetAssessment();
+      resetPlan();
+      clearCoachMessages();
+      setAuthUser(null);
       setShowDeleteConfirm(false);
       toast("탈퇴가 완료되었습니다");
       router.replace("/");
@@ -695,13 +698,15 @@ export default function MyPage() {
               danger
               chevron={false}
             />
-            <MenuItem
-              icon={Icons.trash}
-              label="회원 탈퇴"
-              onClick={() => setShowDeleteConfirm(true)}
-              danger
-              chevron={false}
-            />
+            {authUser && (
+              <MenuItem
+                icon={Icons.trash}
+                label="회원 탈퇴"
+                onClick={() => setShowDeleteConfirm(true)}
+                danger
+                chevron={false}
+              />
+            )}
           </div>
         </motion.div>
 

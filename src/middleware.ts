@@ -1,12 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// 인증 없이 접근 가능한 경로
+const PUBLIC_PATHS = ['/', '/login', '/manifest.webmanifest']
+const PUBLIC_PREFIXES = ['/auth/', '/api/']
+
 export async function middleware(request: NextRequest) {
-    // 로그인 페이지, 콜백, 정적 파일은 통과
     const { pathname } = request.nextUrl
-    if (pathname === '/login' || pathname.startsWith('/auth/')) {
-        return NextResponse.next()
-    }
+
+    // 공개 경로는 세션 갱신만 하고 통과
+    const isPublic = PUBLIC_PATHS.includes(pathname) ||
+        PUBLIC_PREFIXES.some(p => pathname.startsWith(p))
 
     let response = NextResponse.next({
         request: { headers: request.headers },
@@ -39,14 +43,24 @@ export async function middleware(request: NextRequest) {
         })
 
         // 세션 갱신 시도 (타임아웃 5초)
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 5000)
+        const timeout = setTimeout(() => {}, 5000)
 
         try {
-            await supabase.auth.getUser()
+            const { data: { user } } = await supabase.auth.getUser()
+
+            // 비공개 페이지인데 비로그인 → 로그인으로 리다이렉트
+            if (!isPublic && !user) {
+                const loginUrl = new URL('/login', request.url)
+                loginUrl.searchParams.set('next', pathname)
+                return NextResponse.redirect(loginUrl)
+            }
         } catch {
-            // Supabase 연결 실패해도 앱은 정상 동작
-            console.warn('[middleware] Supabase auth check failed, continuing...')
+            // Supabase 연결 실패 시: 공개 페이지면 통과, 비공개면 리다이렉트
+            if (!isPublic) {
+                const loginUrl = new URL('/login', request.url)
+                loginUrl.searchParams.set('next', pathname)
+                return NextResponse.redirect(loginUrl)
+            }
         } finally {
             clearTimeout(timeout)
         }

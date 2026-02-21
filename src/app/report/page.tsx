@@ -58,7 +58,7 @@ function RadarChartSimple({ data }: { data: { label: string; value: number }[] }
         const x = center + labelRadius * Math.cos(angle);
         const y = center + labelRadius * Math.sin(angle);
         return (
-          <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="text-[11px] font-semibold" fill="#8B95A1">
+          <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="text-[12px] font-bold" fill="#4E5968">
             {d.label}
           </text>
         );

@@ -291,7 +291,7 @@ function DailyCheckinPage() {
                                 </div>
                                 <button
                                   onClick={() => toast("영상 기능은 준비중이에요!")}
-                                  className="text-[12px] font-medium text-primary bg-primary/5 px-2 py-1 rounded-md hover:bg-primary/10 transition-colors flex-shrink-0"
+                                  className="text-[13px] font-semibold text-primary bg-primary/8 px-3 min-h-[36px] rounded-lg active:bg-primary/15 transition-colors flex-shrink-0 flex items-center"
                                 >
                                   영상 ▶
                                 </button>

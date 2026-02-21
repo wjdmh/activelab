@@ -570,15 +570,15 @@ export default function MyPage() {
             <div className="grid grid-cols-3 gap-3 mt-5 pt-5 border-t border-border-card/50">
               <div className="text-center">
                 <p className="text-[22px] font-bold text-primary">{sportsAge}</p>
-                <p className="text-[11px] text-text-caption mt-0.5">스포츠 나이</p>
+                <p className="text-[12px] font-medium text-text-caption mt-1">스포츠 나이</p>
               </div>
               <div className="text-center">
                 <p className="text-[22px] font-bold text-text-primary">{totalWorkouts}</p>
-                <p className="text-[11px] text-text-caption mt-0.5">총 운동</p>
+                <p className="text-[12px] font-medium text-text-caption mt-1">총 운동</p>
               </div>
               <div className="text-center">
                 <p className="text-[22px] font-bold text-success">{streak}</p>
-                <p className="text-[11px] text-text-caption mt-0.5">연속 일수</p>
+                <p className="text-[12px] font-medium text-text-caption mt-1">연속 일수</p>
               </div>
             </div>
           )}

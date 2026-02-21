@@ -290,6 +290,17 @@ input:-webkit-autofill:focus {
   animation: typing-bounce 1.4s ease-in-out infinite;
 }
 
+/* 접근성: 모션 감소 설정 */
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation: none;
+    opacity: 0.6;
+  }
+  .breathe, .fluid-core, .dot-float-1, .dot-float-2, .dot-float-3 {
+    animation: none !important;
+  }
+}
+
 /* Gradient text utility */
 .gradient-text {
   background: linear-gradient(135deg, #3182F6 0%, #4B95F9 50%, #6BABFF 100%);

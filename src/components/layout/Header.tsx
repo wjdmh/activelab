@@ -64,11 +64,11 @@ export function Header() {
             <>
               <div className="flex items-center gap-1.5 bg-success/8 px-2.5 py-1 rounded-full">
                 <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                <span className="text-[11px] text-success font-semibold">코칭 중</span>
+                <span className="text-[12px] text-success font-semibold">코칭 중</span>
               </div>
               <button
                 onClick={() => router.push("/my")}
-                className="w-9 h-9 rounded-full bg-bg-warm flex items-center justify-center active:bg-border-card transition-colors"
+                className="w-10 h-10 rounded-full bg-bg-warm flex items-center justify-center active:bg-border-card transition-colors"
                 aria-label="마이페이지"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

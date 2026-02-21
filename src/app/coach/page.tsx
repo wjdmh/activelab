@@ -115,7 +115,7 @@ function ChipSelector({
           <button
             key={chip.id}
             onClick={() => onSelect(chip.id, chip.label)}
-            className={`flex-shrink-0 px-4 py-2.5 rounded-full text-[14px] font-medium transition-all whitespace-nowrap ${isSelected
+            className={`flex-shrink-0 px-4 min-h-[44px] rounded-full text-[14px] font-medium transition-all whitespace-nowrap ${isSelected
                 ? "bg-primary text-white shadow-sm"
                 : "bg-bg-warm text-text-secondary active:bg-primary/10 active:text-primary"
               }`}
@@ -179,10 +179,10 @@ function TypingIndicator() {
 function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-1.5 bg-bg-warm rounded-full overflow-hidden">
-        <motion.div className="h-full bg-primary rounded-full" animate={{ width: `${Math.min((step / total) * 100, 100)}%` }} transition={{ duration: 0.4 }} />
+      <div className="flex-1 h-2 bg-bg-warm rounded-full overflow-hidden">
+        <motion.div className="h-full bg-gradient-to-r from-primary to-[#4B95F9] rounded-full" animate={{ width: `${Math.min((step / total) * 100, 100)}%` }} transition={{ duration: 0.4 }} />
       </div>
-      <span className="text-[12px] font-semibold text-text-caption flex-shrink-0">{Math.min(step, total)}/{total}</span>
+      <span className="text-[13px] font-bold text-text-secondary flex-shrink-0">{Math.min(step, total)}/{total}</span>
     </div>
   );
 }
@@ -200,8 +200,9 @@ function DrumPicker({
   suffix: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const ITEM_H = 44;
+  const ITEM_H = 48;
   const isScrollingRef = useRef(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     const idx = items.indexOf(value);
@@ -219,54 +220,59 @@ function DrumPicker({
     if (items[clamped] !== value) {
       onChange(items[clamped]);
     }
-  };
-
-  const handleScrollEnd = () => {
-    if (!containerRef.current) return;
-    const scrollTop = containerRef.current.scrollTop;
-    const idx = Math.round(scrollTop / ITEM_H);
-    const clamped = Math.max(0, Math.min(items.length - 1, idx));
-    containerRef.current.scrollTo({ top: clamped * ITEM_H, behavior: "smooth" });
-    isScrollingRef.current = false;
+    // 스크롤 멈춤 감지 (debounce로 자동 스냅)
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      if (!containerRef.current) return;
+      const st = containerRef.current.scrollTop;
+      const snapIdx = Math.round(st / ITEM_H);
+      const snapClamped = Math.max(0, Math.min(items.length - 1, snapIdx));
+      containerRef.current.scrollTo({ top: snapClamped * ITEM_H, behavior: "smooth" });
+      isScrollingRef.current = false;
+    }, 120);
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-[90px] h-[132px] overflow-hidden">
+    <div className="flex flex-col items-center flex-1">
+      <div className="relative w-full h-[144px] overflow-hidden rounded-xl">
         {/* 선택 영역 하이라이트 */}
-        <div className="absolute top-[44px] left-0 right-0 h-[44px] bg-primary/8 rounded-xl border border-primary/15 z-0 pointer-events-none" />
+        <div className="absolute top-[48px] left-1 right-1 h-[48px] bg-primary/10 rounded-xl border border-primary/20 z-0 pointer-events-none" />
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          onTouchEnd={handleScrollEnd}
-          onMouseUp={handleScrollEnd}
           className="absolute inset-0 overflow-y-auto scrollbar-hide snap-y snap-mandatory z-10"
           style={{ paddingTop: ITEM_H, paddingBottom: ITEM_H }}
         >
-          {items.map((item) => (
-            <div
-              key={item}
-              className={`h-[44px] flex items-center justify-center snap-center text-[18px] font-semibold transition-colors ${item === value ? "text-text-primary" : "text-text-disabled"
+          {items.map((item) => {
+            const isSelected = item === value;
+            return (
+              <div
+                key={item}
+                className={`h-[48px] flex items-center justify-center snap-center transition-all duration-150 ${
+                  isSelected
+                    ? "text-text-primary text-[20px] font-bold scale-105"
+                    : "text-text-disabled text-[16px] font-medium"
                 }`}
-            >
-              {item}
-            </div>
-          ))}
+              >
+                {item}
+              </div>
+            );
+          })}
         </div>
-        {/* 위아래 그라데이션 */}
-        <div className="absolute top-0 left-0 right-0 h-[44px] bg-gradient-to-b from-bg-primary to-transparent z-20 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 h-[44px] bg-gradient-to-t from-bg-primary to-transparent z-20 pointer-events-none" />
+        {/* 위아래 그라데이션 (fade) */}
+        <div className="absolute top-0 left-0 right-0 h-[48px] bg-gradient-to-b from-bg-warm to-transparent z-20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-[48px] bg-gradient-to-t from-bg-warm to-transparent z-20 pointer-events-none" />
       </div>
-      <span className="text-[13px] text-text-caption mt-1">{suffix}</span>
+      <span className="text-[12px] font-medium text-text-caption mt-2">{suffix}</span>
     </div>
   );
 }
 
 function BodyInfoPicker({ onConfirm }: { onConfirm: (age: number, height: number, weight: number) => void }) {
   const currentYear = new Date().getFullYear();
-  const birthYears = Array.from({ length: 71 }, (_, i) => currentYear - 80 + i); // 80세~10세
-  const heights = Array.from({ length: 71 }, (_, i) => 130 + i); // 130~200cm
-  const weights = Array.from({ length: 121 }, (_, i) => 30 + i); // 30~150kg
+  const birthYears = Array.from({ length: 71 }, (_, i) => currentYear - 80 + i);
+  const heights = Array.from({ length: 71 }, (_, i) => 130 + i);
+  const weights = Array.from({ length: 121 }, (_, i) => 30 + i);
 
   const [birthYear, setBirthYear] = useState(currentYear - 60);
   const [height, setHeight] = useState(165);
@@ -278,21 +284,21 @@ function BodyInfoPicker({ onConfirm }: { onConfirm: (age: number, height: number
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-bg-warm rounded-2xl p-5"
+      className="bg-bg-warm rounded-2xl p-4"
     >
-      <p className="text-[14px] font-semibold text-text-primary text-center mb-4">
+      <p className="text-[14px] font-semibold text-text-primary text-center mb-3">
         스크롤해서 선택해주세요
       </p>
 
-      <div className="flex items-start justify-center gap-4">
+      <div className="flex items-start justify-center gap-3">
         <DrumPicker items={birthYears} value={birthYear} onChange={setBirthYear} suffix={`태어난 해 (${age}세)`} />
-        <DrumPicker items={heights} value={height} onChange={setHeight} suffix="cm" />
-        <DrumPicker items={weights} value={weight} onChange={setWeight} suffix="kg" />
+        <DrumPicker items={heights} value={height} onChange={setHeight} suffix="키 (cm)" />
+        <DrumPicker items={weights} value={weight} onChange={setWeight} suffix="몸무게 (kg)" />
       </div>
 
       <button
         onClick={() => onConfirm(age, height, weight)}
-        className="w-full mt-5 py-3 rounded-full bg-primary text-white text-[15px] font-bold active:brightness-95 transition-all"
+        className="w-full mt-4 min-h-[48px] rounded-2xl bg-primary text-white text-[16px] font-bold active:brightness-95 transition-all shadow-button"
       >
         확인
       </button>
@@ -783,7 +789,7 @@ function HybridChatFlow() {
         <div className="px-5 py-3 border-t border-border-card/40 bg-bg-primary">
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {test.chips.map((chip, i) => (
-              <button key={i} onClick={() => handleFitnessAnswer(i, chip)} className="flex-shrink-0 px-4 py-2.5 rounded-full text-[14px] font-medium bg-bg-warm text-text-secondary active:bg-primary/10 active:text-primary transition-all whitespace-nowrap">
+              <button key={i} onClick={() => handleFitnessAnswer(i, chip)} className="flex-shrink-0 px-4 min-h-[44px] rounded-full text-[14px] font-medium bg-bg-warm text-text-secondary active:bg-primary/10 active:text-primary transition-all whitespace-nowrap">
                 {chip}
               </button>
             ))}

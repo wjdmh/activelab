@@ -242,7 +242,7 @@ function LoginContent() {
                                         onChange={(e) => { setEmail(e.target.value); setError(""); }}
                                         placeholder="이메일 주소"
                                         autoComplete="email"
-                                        className="w-full h-[56px] pl-11 pr-4 rounded-2xl bg-bg-warm border-2 border-transparent text-[15px] text-text-primary placeholder-text-disabled outline-none focus:bg-bg-primary focus:border-primary/30 transition-all"
+                                        className="w-full h-[56px] pl-11 pr-4 rounded-2xl bg-bg-warm border-2 border-transparent text-[15px] text-text-primary placeholder-text-disabled outline-none focus:bg-white focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
                                     />
                                 </div>
                                 <div className="relative">
@@ -258,12 +258,12 @@ function LoginContent() {
                                         onChange={(e) => { setPassword(e.target.value); setError(""); }}
                                         placeholder={isSignup ? "비밀번호 설정 (6자 이상)" : "비밀번호"}
                                         autoComplete={isSignup ? "new-password" : "current-password"}
-                                        className="w-full h-[56px] pl-11 pr-12 rounded-2xl bg-bg-warm border-2 border-transparent text-[15px] text-text-primary placeholder-text-disabled outline-none focus:bg-bg-primary focus:border-primary/30 transition-all"
+                                        className="w-full h-[56px] pl-11 pr-12 rounded-2xl bg-bg-warm border-2 border-transparent text-[15px] text-text-primary placeholder-text-disabled outline-none focus:bg-white focus:border-primary/50 focus:ring-2 focus:ring-primary/15 transition-all"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-text-caption active:text-text-secondary transition-colors p-1"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 text-text-caption active:text-text-secondary transition-colors p-3 min-w-[44px] min-h-[44px] flex items-center justify-center"
                                         aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
                                     >
                                         {showPassword ? (

@@ -9,7 +9,6 @@ type ViewMode = "login" | "signup" | "otp";
 
 function LoginContent() {
     const [isLoading, setIsLoading] = useState(false);
-    const [view, setView] = useState<ViewMode>("signup");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +18,8 @@ function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next") || "/";
+    const initialView = searchParams.get("view") === "login" ? "login" : "signup";
+    const [view, setView] = useState<ViewMode>(initialView);
     const supabase = createClient();
 
     // 이미 로그인되어 있으면 next로 리다이렉트
@@ -102,6 +103,12 @@ function LoginContent() {
         else handleLogin();
     };
 
+    const switchView = (newView: ViewMode) => {
+        setView(newView);
+        setError("");
+        setShowPassword(false);
+    };
+
     // OTP 확인 화면
     if (view === "otp") {
         return (
@@ -125,7 +132,7 @@ function LoginContent() {
                         {otpMessage}
                     </p>
                     <button
-                        onClick={() => { setView("login"); setError(""); }}
+                        onClick={() => switchView("login")}
                         className="w-full min-h-[56px] rounded-2xl bg-primary text-white text-[17px] font-bold active:brightness-95 transition-all shadow-button"
                     >
                         로그인하기
@@ -142,11 +149,22 @@ function LoginContent() {
         );
     }
 
+    const isSignup = view === "signup";
+
     return (
         <div className="flex flex-col min-h-dvh bg-bg-primary relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute top-[-10%] right-[-20%] w-[60vw] h-[60vw] max-w-[320px] max-h-[320px] bg-primary/[0.03] rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-[10%] left-[-15%] w-[50vw] h-[50vw] max-w-[260px] max-h-[260px] bg-[#6BABFF]/[0.04] rounded-full blur-3xl pointer-events-none" />
+            {/* Background decoration - 회원가입: 밝은 그라데이션, 로그인: 차분한 톤 */}
+            {isSignup ? (
+                <>
+                    <div className="absolute top-[-10%] right-[-20%] w-[60vw] h-[60vw] max-w-[320px] max-h-[320px] bg-primary/[0.05] rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute bottom-[10%] left-[-15%] w-[50vw] h-[50vw] max-w-[260px] max-h-[260px] bg-[#6BABFF]/[0.06] rounded-full blur-3xl pointer-events-none" />
+                </>
+            ) : (
+                <>
+                    <div className="absolute top-[-10%] right-[-20%] w-[60vw] h-[60vw] max-w-[320px] max-h-[320px] bg-text-primary/[0.02] rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute bottom-[10%] left-[-15%] w-[50vw] h-[50vw] max-w-[260px] max-h-[260px] bg-text-caption/[0.03] rounded-full blur-3xl pointer-events-none" />
+                </>
+            )}
 
             <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
                 <motion.div
@@ -160,12 +178,36 @@ function LoginContent() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
-                        className="mb-8"
+                        className="mb-6"
                     >
                         <div className="w-[72px] h-[72px] rounded-[22px] bg-gradient-to-br from-primary via-[#4B95F9] to-[#6BABFF] flex items-center justify-center shadow-elevated">
                             <span className="text-white text-[18px] font-black tracking-tighter">ON-U</span>
                         </div>
                     </motion.div>
+
+                    {/* Tab Switcher - 회원가입/로그인 명확하게 구분 */}
+                    <div className="w-full bg-bg-warm rounded-2xl p-1 flex mb-6">
+                        <button
+                            onClick={() => switchView("signup")}
+                            className={`flex-1 py-3 rounded-xl text-[15px] font-semibold transition-all ${
+                                isSignup
+                                    ? "bg-white text-primary shadow-sm"
+                                    : "text-text-caption"
+                            }`}
+                        >
+                            회원가입
+                        </button>
+                        <button
+                            onClick={() => switchView("login")}
+                            className={`flex-1 py-3 rounded-xl text-[15px] font-semibold transition-all ${
+                                !isSignup
+                                    ? "bg-white text-text-primary shadow-sm"
+                                    : "text-text-caption"
+                            }`}
+                        >
+                            로그인
+                        </button>
+                    </div>
 
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -176,13 +218,14 @@ function LoginContent() {
                             transition={{ duration: 0.2 }}
                             className="w-full flex flex-col items-center"
                         >
-                            <h1 className="text-[24px] font-bold text-text-primary mb-1.5 text-center tracking-tight">
-                                {view === "signup" ? "시작하기" : "다시 만나서 반가워요!"}
+                            {/* 모드별 다른 헤더 */}
+                            <h1 className="text-[22px] font-bold text-text-primary mb-1 text-center tracking-tight">
+                                {isSignup ? "ON-U와 함께 시작해요" : "다시 만나서 반가워요!"}
                             </h1>
-                            <p className="text-[15px] text-text-caption text-center mb-8">
-                                {view === "signup"
-                                    ? "이메일로 간편하게 가입하세요"
-                                    : "이메일로 로그인하세요"}
+                            <p className="text-[14px] text-text-caption text-center mb-6">
+                                {isSignup
+                                    ? "3분 진단으로 맞춤 트레이닝을 받아보세요"
+                                    : "기존 계정으로 로그인하세요"}
                             </p>
 
                             {/* Form */}
@@ -213,8 +256,8 @@ function LoginContent() {
                                         type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                                        placeholder="비밀번호 (6자 이상)"
-                                        autoComplete={view === "signup" ? "new-password" : "current-password"}
+                                        placeholder={isSignup ? "비밀번호 설정 (6자 이상)" : "비밀번호"}
+                                        autoComplete={isSignup ? "new-password" : "current-password"}
                                         className="w-full h-[56px] pl-11 pr-12 rounded-2xl bg-bg-warm border-2 border-transparent text-[15px] text-text-primary placeholder-text-disabled outline-none focus:bg-bg-primary focus:border-primary/30 transition-all"
                                     />
                                     <button
@@ -261,28 +304,20 @@ function LoginContent() {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full min-h-[56px] rounded-2xl bg-primary text-white text-[17px] font-bold active:brightness-95 active:translate-y-[1px] transition-all shadow-button disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center"
+                                        className={`w-full min-h-[56px] rounded-2xl text-white text-[17px] font-bold active:brightness-95 active:translate-y-[1px] transition-all shadow-button disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center ${
+                                            isSignup
+                                                ? "bg-gradient-to-r from-primary to-[#4B95F9]"
+                                                : "bg-text-primary"
+                                        }`}
                                     >
                                         {isLoading ? (
                                             <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         ) : (
-                                            view === "signup" ? "회원가입" : "로그인"
+                                            isSignup ? "무료로 시작하기" : "로그인"
                                         )}
                                     </button>
                                 </div>
                             </form>
-
-                            {/* Toggle */}
-                            <button
-                                onClick={() => { setView(view === "signup" ? "login" : "signup"); setError(""); setShowPassword(false); }}
-                                className="mt-6 text-[14px] text-text-caption font-medium min-h-[44px] flex items-center"
-                            >
-                                {view === "signup" ? (
-                                    <>이미 회원이신가요? <span className="text-primary font-semibold ml-1">로그인</span></>
-                                ) : (
-                                    <>계정이 없으신가요? <span className="text-primary font-semibold ml-1">회원가입</span></>
-                                )}
-                            </button>
                         </motion.div>
                     </AnimatePresence>
                 </motion.div>

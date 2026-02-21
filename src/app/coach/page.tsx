@@ -674,8 +674,13 @@ function HybridChatFlow() {
     setSelectedChipIds([]);
     setCurrentAIChips([]);
 
+    // "없음" 계열 답변이면 추가 질문 스킵하고 바로 결과로
+    const skipKeywords = ["없음", "딱히", "특별히", "모르겠", "괜찮", "없어요", "없습니다"];
+    const isSkipAnswer = skipKeywords.some((k) => val.includes(k));
+
     const nextStep = step + 1;
-    if (nextStep > 12) {
+    // 스킵 답변이면 남은 질문을 모두 건너뛰고 결과 화면으로
+    if (isSkipAnswer || nextStep > 12) {
       setStep(13);
       setShowResultButton(true);
       const name = useAssessmentStore.getState().userProfile.nickname || "사용자";

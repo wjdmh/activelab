@@ -457,9 +457,14 @@ export default function MyPage() {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
+      resetUser();
+      resetAssessment();
+      resetPlan();
+      clearCoachMessages();
       setAuthUser(null);
       setShowLogoutConfirm(false);
       toast("로그아웃되었습니다");
+      router.replace("/");
     } catch {
       // ignore
     }

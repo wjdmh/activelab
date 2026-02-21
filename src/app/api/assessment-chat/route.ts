@@ -116,29 +116,30 @@ ${historyText}
 
 chips는 3~4개, 사용자가 쉽게 답할 수 있는 자연스러운 선택지로 만들어라.`;
 
+  const fallbacks: Record<number, { question: string; chips: string[] }> = {
+    8: {
+      question: `${profile.sportLabel} 할 때 **가장 힘든 동작**이 있으신가요?`,
+      chips: ["스윙/회전 동작", "오래 서 있기", "빠른 움직임"],
+    },
+    9: {
+      question: "평소에 별도로 **근력운동이나 스트레칭**을 하시나요?",
+      chips: ["매일 함", "가끔 생각나면", "전혀 안 함"],
+    },
+    10: {
+      question: "일주일에 **몇 번 정도** 운동하시나요?",
+      chips: ["주 1~2회", "주 3~4회", "거의 매일"],
+    },
+    11: {
+      question: `${profile.sportLabel} 후 **다음날 몸 상태**는 보통 어떤 편인가요?`,
+      chips: ["거뜬함", "약간 피로", "꽤 힘듦", "통증 있음"],
+    },
+    12: {
+      question: "**수면**은 충분히 취하시는 편인가요?",
+      chips: ["잘 자는 편", "가끔 뒤척임", "수면 부족"],
+    },
+  };
+
   if (!apiKey) {
-    const fallbacks: Record<number, { question: string; chips: string[] }> = {
-      8: {
-        question: `${profile.sportLabel} 할 때 **가장 힘든 동작**이 있으신가요?`,
-        chips: ["스윙/회전 동작", "오래 서 있기", "빠른 움직임", "특별히 없음"],
-      },
-      9: {
-        question: "평소에 별도로 **근력운동이나 스트레칭**을 하시나요?",
-        chips: ["매일 함", "가끔 생각나면", "전혀 안 함"],
-      },
-      10: {
-        question: "일주일에 **몇 번 정도** 운동하시나요?",
-        chips: ["주 1~2회", "주 3~4회", "거의 매일"],
-      },
-      11: {
-        question: `${profile.sportLabel} 후 **다음날 몸 상태**는 보통 어떤 편인가요?`,
-        chips: ["거뜬함", "약간 피로", "꽤 힘듦", "통증 있음"],
-      },
-      12: {
-        question: "**수면**은 충분히 취하시는 편인가요?",
-        chips: ["잘 자는 편", "가끔 뒤척임", "수면 부족"],
-      },
-    };
     const fb = fallbacks[step] || fallbacks[8];
     return NextResponse.json(fb);
   }
@@ -159,10 +160,8 @@ chips는 3~4개, 사용자가 쉽게 답할 수 있는 자연스러운 선택지
       chips: Array.isArray(parsed.chips) ? parsed.chips : [],
     });
   } catch {
-    return NextResponse.json({
-      question: `${profile.sportLabel} 관련해서 평소 궁금하신 점이 있으신가요?`,
-      chips: ["자세 교정", "체력 향상", "부상 예방", "특별히 없음"],
-    });
+    const fb = fallbacks[step] || fallbacks[8];
+    return NextResponse.json(fb);
   }
 }
 

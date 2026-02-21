@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -37,6 +37,17 @@ export default function DailyCheckinPage() {
   const result = useAssessmentStore((s) => s.result);
   const hasCompleted = useUserStore((s) => s.hasCompletedAssessment);
   const toast = useToast((s) => s.toast);
+
+  const searchParams = useSearchParams();
+  const purposeParam = searchParams.get("purpose");
+
+  const PURPOSE_MAP: Record<string, { label: string; emoji: string }> = {
+    "strength": { label: "근력 강화", emoji: "💪" },
+    "flexibility": { label: "유연성·회복", emoji: "🧘" },
+    "conditioning": { label: "체력·심폐", emoji: "🏃" },
+    "injury-prevention": { label: "부상 예방", emoji: "🛡️" },
+  };
+  const purposeInfo = purposeParam ? PURPOSE_MAP[purposeParam] : null;
 
   const [step, setStep] = useState<"condition" | "time" | "prescription">("condition");
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
@@ -79,13 +90,15 @@ export default function DailyCheckinPage() {
     const conditionLabel = CONDITION_OPTIONS.find((o) => o.id === selectedCondition)?.label || "";
     const minutes = timeId === "10" ? 10 : timeId === "20" ? 20 : 30;
     const activityDesc = isNonExerciser ? "건강한 일상을 위한" : `${sportLabel}을 위한`;
+    const purposeLabel = purposeInfo?.label || "";
+    const purposeContext = purposeLabel ? ` 운동 목적: "${purposeLabel}".` : "";
 
     try {
       const res = await fetch("/api/coach", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: `오늘 컨디션: "${conditionLabel}", 가용 시간: ${minutes}분. ${activityDesc} 맞춤 루틴을 JSON으로 추천해주세요. 반드시 준비운동(warmup) → 본운동(main) → 마무리운동(cooldown) 순서로 구성하세요. 형식: {"explanation":"오늘 이 루틴을 구성한 이유를 1~2문장으로 설명","exercises":[{"name":"운동이름","description":"설명","targetArea":"부위","sets":3,"reps":10,"phase":"warmup|main|cooldown"}]}. 컨디션과 시간에 맞게 ${selectedCondition === "sore" ? "가벼운 스트레칭 위주로" : "적절한 강도로"} ${Math.floor(minutes / 8)}~${Math.floor(minutes / 5)}개 운동을 구성해주세요.`,
+          message: `오늘 컨디션: "${conditionLabel}", 가용 시간: ${minutes}분.${purposeContext} ${activityDesc} 맞춤 루틴을 JSON으로 추천해주세요. 반드시 준비운동(warmup) → 본운동(main) → 마무리운동(cooldown) 순서로 구성하세요. 형식: {"explanation":"오늘 이 루틴을 구성한 이유를 1~2문장으로 설명","exercises":[{"name":"운동이름","description":"설명","targetArea":"부위","sets":3,"reps":10,"phase":"warmup|main|cooldown"}]}. ${purposeLabel ? `"${purposeLabel}" 목적에 맞게` : ""} 컨디션과 시간에 맞게 ${selectedCondition === "sore" ? "가벼운 스트레칭 위주로" : "적절한 강도로"} ${Math.floor(minutes / 8)}~${Math.floor(minutes / 5)}개 운동을 구성해주세요.`,
           nickname,
           context: { sport: sportLabel },
           history: [],
@@ -124,7 +137,9 @@ export default function DailyCheckinPage() {
             <path d="M15 19l-7-7 7-7" stroke="#333D4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <span className="text-[16px] font-bold text-text-primary tracking-tight">운동 시작하기</span>
+        <span className="text-[16px] font-bold text-text-primary tracking-tight">
+          {purposeInfo ? `${purposeInfo.emoji} ${purposeInfo.label}` : "운동 시작하기"}
+        </span>
         <div className="w-9" />
       </header>
 
@@ -212,6 +227,7 @@ export default function DailyCheckinPage() {
                 오늘의 <strong className="text-primary">맞춤 루틴</strong>
               </h1>
               <p className="text-[14px] text-text-caption mb-6">
+                {purposeInfo && <>{purposeInfo.emoji} {purposeInfo.label} · </>}
                 {CONDITION_OPTIONS.find((o) => o.id === selectedCondition)?.emoji}{" "}
                 {CONDITION_OPTIONS.find((o) => o.id === selectedCondition)?.label} ·{" "}
                 {TIME_OPTIONS.find((o) => o.id === selectedTime)?.label}

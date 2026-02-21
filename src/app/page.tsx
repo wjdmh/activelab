@@ -120,6 +120,12 @@ function LandingScreen() {
         >
           3분 만에 시작하기
         </button>
+        <button
+          onClick={() => router.push("/login?view=login")}
+          className="w-full min-h-[48px] rounded-2xl bg-transparent border-2 border-border-card text-text-secondary text-[15px] font-semibold active:bg-bg-warm active:border-primary/30 active:text-primary transition-all"
+        >
+          이미 회원이신가요? 로그인
+        </button>
         <p className="text-[12px] text-text-disabled text-center">
           무료로 체력 진단 받고 맞춤 루틴 시작
         </p>
@@ -431,7 +437,7 @@ function HomeMain() {
           </motion.div>
         )}
 
-        {/* ===== Workout Card (before workout) ===== */}
+        {/* ===== 온유 코치 + 운동 목적 선택 ===== */}
         {!todayWorkoutCompleted && !allDone && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -440,96 +446,60 @@ function HomeMain() {
             className="mb-4"
           >
             <div className="bg-white rounded-3xl shadow-card border border-border-card/50 overflow-hidden">
-              {/* Card header */}
-              <div className="bg-gradient-to-br from-primary/[0.03] to-primary/[0.06] px-5 py-4 border-b border-border-card/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] text-primary font-bold tracking-wider uppercase mb-0.5">오늘의 트레이닝</p>
-                    <h2 className="text-[18px] font-bold text-text-primary tracking-tight">
-                      {weeklyPlan ? (todayPlan?.theme || "맞춤 운동") : "운동 시작하기"}
-                    </h2>
+              {/* 코치 프로필 영역 */}
+              <div className="bg-gradient-to-br from-primary/[0.04] to-[#6BABFF]/[0.08] px-5 py-5 border-b border-border-card/20">
+                <div className="flex items-center gap-3.5">
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-[#4B95F9] to-[#6BABFF] flex items-center justify-center shadow-md">
+                      <span className="text-white text-[12px] font-black tracking-tighter leading-none">ON-U</span>
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-success border-2 border-white" />
                   </div>
-                  <div className="w-11 h-11 rounded-2xl bg-primary/8 flex items-center justify-center">
-                    <span className="text-[22px]">💪</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <h2 className="text-[16px] font-bold text-text-primary tracking-tight">온유 코치</h2>
+                      <span className="text-[10px] font-bold text-primary bg-primary/8 px-1.5 py-0.5 rounded-full">AI</span>
+                    </div>
+                    <p className="text-[13px] text-text-caption leading-snug">
+                      {nickname ? `${nickname}님, ` : ""}오늘은 어떤 운동을 해볼까요?
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="p-5">
-                {/* Start button */}
+              {/* 운동 목적 선택 */}
+              <div className="p-4">
+                <p className="text-[12px] font-semibold text-text-caption mb-3 px-1">운동 목적을 선택하세요</p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { id: "strength", label: "근력 강화", emoji: "💪", desc: "힘과 파워 키우기" },
+                    { id: "flexibility", label: "유연성·회복", emoji: "🧘", desc: "스트레칭·릴랙스" },
+                    { id: "conditioning", label: "체력·심폐", emoji: "🏃", desc: "지구력 향상" },
+                    { id: "injury-prevention", label: "부상 예방", emoji: "🛡️", desc: "안전한 몸 만들기" },
+                  ].map((purpose, i) => (
+                    <motion.button
+                      key={purpose.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.15 + i * 0.05 }}
+                      onClick={() => router.push(`/daily?purpose=${purpose.id}`)}
+                      className="flex flex-col items-center gap-1.5 p-4 rounded-2xl bg-bg-warm border border-border-card/30 active:bg-primary/5 active:border-primary/20 transition-all text-center"
+                    >
+                      <span className="text-[28px]">{purpose.emoji}</span>
+                      <span className="text-[14px] font-bold text-text-primary">{purpose.label}</span>
+                      <span className="text-[11px] text-text-caption leading-tight">{purpose.desc}</span>
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* 빠른 시작 */}
                 <button
-                  onClick={() => {
-                    if (weeklyPlan && exercises.length > 0) {
-                      startSession(todayIndex);
-                      setShowSession(true);
-                    } else {
-                      router.push("/daily");
-                    }
-                  }}
-                  className="w-full min-h-[52px] rounded-2xl bg-primary text-white text-[16px] font-bold shadow-button active:shadow-none active:brightness-95 active:translate-y-[1px] transition-all mb-4"
+                  onClick={() => router.push("/daily")}
+                  className="w-full mt-3 min-h-[48px] rounded-2xl bg-primary text-white text-[15px] font-bold shadow-button active:shadow-none active:brightness-95 active:translate-y-[1px] transition-all flex items-center justify-center gap-2"
                 >
-                  {weeklyPlan ? "운동 시작하기" : "오늘 컨디션 체크하고 시작"}
+                  <span className="text-[16px]">⚡</span>
+                  빠른 시작
                 </button>
-
-                {/* Weekly plan exercises */}
-                {weeklyPlan && exercises.length > 0 && !isRestMode && (
-                  <>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[13px] font-semibold text-text-secondary">맞춤 루틴</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[13px] text-text-caption">{completedCount}/{totalExercises}</span>
-                        <span className="text-[13px] font-bold text-primary">{Math.round((completedCount / totalExercises) * 100)}%</span>
-                      </div>
-                    </div>
-                    <div className="h-1.5 bg-bg-warm rounded-full overflow-hidden mb-4">
-                      <motion.div className="h-full bg-gradient-to-r from-primary to-[#4B95F9] rounded-full" initial={{ width: 0 }} animate={{ width: `${(completedCount / totalExercises) * 100}%` }} transition={{ duration: 0.5 }} />
-                    </div>
-                    <div className="space-y-2">
-                      {exercises.slice(0, 3).map((exercise, idx) => {
-                        const done = isExerciseCompleted(todayIndex, exercise.id);
-                        return (
-                          <button
-                            key={exercise.id}
-                            onClick={() => router.push(`/player?day=${todayIndex}&ex=${idx}`)}
-                            className={`w-full p-3 rounded-xl text-left flex items-center gap-3 transition-all ${done ? "bg-success/5 opacity-60" : "bg-bg-warm active:bg-primary/5"}`}
-                          >
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[12px] font-bold ${done ? "bg-success text-white" : "bg-primary/10 text-primary"}`}>
-                              {done ? "✓" : idx + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-[14px] font-semibold ${done ? "text-text-caption line-through" : "text-text-primary"}`}>{exercise.name}</p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                      {exercises.length > 3 && (
-                        <p className="text-[13px] text-text-caption text-center mt-2">+{exercises.length - 3}개 더</p>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Recommendations (no weekly plan) */}
-                {!weeklyPlan && recommendations.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[13px] font-semibold text-text-secondary mb-2">추천 운동</p>
-                    {recommendations.slice(0, 3).map((rec, i) => (
-                      <button
-                        key={rec.id}
-                        onClick={() => router.push(`/player?source=report&idx=${i}`)}
-                        className="w-full p-3 rounded-xl text-left flex items-center gap-3 bg-bg-warm active:bg-primary/5 transition-all"
-                      >
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[12px] font-bold bg-primary/10 text-primary">
-                          {i + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[14px] font-semibold text-text-primary">{rec.name}</p>
-                          <p className="text-[12px] text-text-caption">{rec.targetArea} · {rec.sets}세트 {rec.reps}회</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </motion.div>

@@ -18,6 +18,7 @@ export function AuthInitializer() {
         initialized.current = true;
 
         let subscription: { unsubscribe: () => void } | null = null;
+        let onlineHandler: (() => void) | null = null;
 
         const init = async () => {
             try {
@@ -48,8 +49,8 @@ export function AuthInitializer() {
                                 ...latest.result,
                             });
                         }
-                    } catch (err) {
-                        console.warn("[AuthInitializer] Session check failed:", err);
+                    } catch {
+                        // 네트워크 오류 등 — 조용히 무시
                     }
                 };
 
@@ -59,19 +60,26 @@ export function AuthInitializer() {
                 const { data } = supabase.auth.onAuthStateChange((event, _session) => {
                     if (event === 'SIGNED_IN') {
                         checkSession();
-                        // 로그인 시 이전 채팅 기록 초기화 (유저별 새 세션)
                         useCoachStore.getState().clearMessages();
-                        // 로그인 후 미저장 진단 데이터가 있으면 Supabase에 저장
                         useAssessmentStore.getState().saveToSupabase().catch(() => {});
                         router.refresh();
                     } else if (event === 'SIGNED_OUT') {
                         useUserStore.getState().resetAll();
-                        // 진단 데이터는 유지 (비로그인 사용자가 진단 중일 수 있음)
+                        useAssessmentStore.getState().resetAssessment();
+                        useCoachStore.getState().clearMessages();
+                        router.replace('/');
                     }
+                    // TOKEN_REFRESHED, TOKEN_REFRESH_FAILED 등은 조용히 무시
                 });
                 subscription = data.subscription;
-            } catch (err) {
-                console.warn("[AuthInitializer] Init failed:", err);
+
+                // 네트워크 복구 시 세션 재확인 (refresh token 재시도)
+                onlineHandler = () => {
+                    supabase.auth.getSession().catch(() => {});
+                };
+                window.addEventListener('online', onlineHandler);
+            } catch {
+                // Supabase 초기화 실패 — 앱은 계속 동작
             }
         };
 
@@ -79,6 +87,7 @@ export function AuthInitializer() {
 
         return () => {
             subscription?.unsubscribe();
+            if (onlineHandler) window.removeEventListener('online', onlineHandler);
         };
     }, [syncUser, setAssessmentData, router]);
 

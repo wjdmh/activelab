@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Card } from "@/components/ui/Card";
@@ -31,7 +31,15 @@ function getTodayLabel(): string {
   return `${month}월 ${date}일 (${days[now.getDay()]})`;
 }
 
-export default function DailyCheckinPage() {
+export default function DailyCheckinPageWrapper() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-dvh"><div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /></div>}>
+      <DailyCheckinPage />
+    </Suspense>
+  );
+}
+
+function DailyCheckinPage() {
   const hydrated = useHydration();
   const router = useRouter();
   const result = useAssessmentStore((s) => s.result);

@@ -57,7 +57,7 @@ export function AuthInitializer() {
                 await checkSession();
 
                 // Listen for auth changes
-                const { data } = supabase.auth.onAuthStateChange((event, _session) => {
+                const { data } = supabase.auth.onAuthStateChange((event: string, _session: unknown) => {
                     if (event === 'SIGNED_IN') {
                         checkSession();
                         useCoachStore.getState().clearMessages();

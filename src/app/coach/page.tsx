@@ -202,7 +202,7 @@ function DrumPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const ITEM_H = 48;
   const isScrollingRef = useRef(false);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     const idx = items.indexOf(value);

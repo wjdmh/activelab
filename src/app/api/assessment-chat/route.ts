@@ -81,11 +81,18 @@ async function generateQuestion(body: RequestBody) {
     .map((m) => `${m.role === "user" ? "사용자" : "코치"}: ${m.content}`)
     .join("\n");
 
+  const isNonExerciserForQ = profile.sport === "none" || profile.sportLabel === "운동 안 함" || !profile.sport;
+  const activityForQ = isNonExerciserForQ ? "일상 활동" : profile.sportLabel;
+
   const questionTopics: Record<number, string> = {
-    1: "운동 빈도와 강도 (주당 운동 횟수, 1회 운동 시간, 자각 강도)",
-    2: `${profile.sportLabel} 수행 시 기능적 제한사항 (ROM, 힘 부족, 균형 불안정 등)`,
+    1: isNonExerciserForQ
+      ? "일상 활동량 (걷기, 계단, 가사노동 등 하루 활동 시간)"
+      : "운동 빈도와 강도 (주당 운동 횟수, 1회 운동 시간, 자각 강도)",
+    2: isNonExerciserForQ
+      ? "일상 동작 시 기능적 제한사항 (계단 오르기, 물건 들기, 오래 서기 등)"
+      : `${activityForQ} 수행 시 기능적 제한사항 (ROM, 힘 부족, 균형 불안정 등)`,
     3: "일상생활 기능 평가 (계단 오르기, 물건 들기, 장시간 보행 등의 어려움)",
-    4: "회복 패턴 (운동 후 회복 시간, 수면의 질, 근육통 지속 기간)",
+    4: "회복 패턴 (활동 후 회복 시간, 수면의 질, 근육통 지속 기간)",
     5: "과거 부상 이력 및 현재 만성 질환 (고혈압, 당뇨, 관절염 등)",
   };
 
@@ -103,7 +110,7 @@ ${historyText}
 주제 초점: ${questionTopics[questionNumber] || "종합적 체력 상태"}
 
 규칙:
-- ${profile.sportLabel}에 특화된 기능적 체력 요소를 파악하는 질문이어야 한다
+- ${isNonExerciserForQ ? "일상생활 기능에 초점을 맞춘" : `${activityForQ}에 특화된`} 기능적 체력 요소를 파악하는 질문이어야 한다
 - 이전 대화에서 이미 물어본 내용은 절대 반복하지 마라
 - 50~60대 액티브 시니어에게 적합한 톤 (존중하되 전문적)
 - 1~2문장, 최대 100자
@@ -116,23 +123,36 @@ ${historyText}
 
 chips는 3~4개, 사용자가 쉽게 답할 수 있는 자연스러운 선택지로 만들어라.`;
 
+  const isNonExerciser = profile.sport === "none" || profile.sportLabel === "운동 안 함" || !profile.sport;
+  const activityLabel = isNonExerciser ? "일상 활동" : profile.sportLabel;
+
   const fallbacks: Record<number, { question: string; chips: string[] }> = {
-    8: {
-      question: `${profile.sportLabel} 할 때 **가장 힘든 동작**이 있으신가요?`,
-      chips: ["스윙/회전 동작", "오래 서 있기", "빠른 움직임"],
-    },
+    8: isNonExerciser
+      ? {
+          question: "평소에 **계단 오르기나 오래 걷기**가 힘드시진 않으세요?",
+          chips: ["잘 해요", "약간 힘들어요", "꽤 힘들어요"],
+        }
+      : {
+          question: `${activityLabel} 할 때 **가장 힘든 동작**이 있으신가요?`,
+          chips: ["스윙/회전 동작", "오래 서 있기", "빠른 움직임"],
+        },
     9: {
       question: "평소에 별도로 **근력운동이나 스트레칭**을 하시나요?",
       chips: ["매일 함", "가끔 생각나면", "전혀 안 함"],
     },
     10: {
-      question: "일주일에 **몇 번 정도** 운동하시나요?",
+      question: "일주일에 **몇 번 정도** 움직이시나요?",
       chips: ["주 1~2회", "주 3~4회", "거의 매일"],
     },
-    11: {
-      question: `${profile.sportLabel} 후 **다음날 몸 상태**는 보통 어떤 편인가요?`,
-      chips: ["거뜬함", "약간 피로", "꽤 힘듦", "통증 있음"],
-    },
+    11: isNonExerciser
+      ? {
+          question: "활동적으로 움직인 **다음날 몸 상태**는 보통 어떤 편인가요?",
+          chips: ["거뜬함", "약간 피로", "꽤 힘듦", "통증 있음"],
+        }
+      : {
+          question: `${activityLabel} 후 **다음날 몸 상태**는 보통 어떤 편인가요?`,
+          chips: ["거뜬함", "약간 피로", "꽤 힘듦", "통증 있음"],
+        },
     12: {
       question: "**수면**은 충분히 취하시는 편인가요?",
       chips: ["잘 자는 편", "가끔 뒤척임", "수면 부족"],
@@ -259,10 +279,12 @@ ${peerAgeNote}`;
       { label: "순발력", value: profile.fitnessTest.agility || 48 },
       { label: "회복력", value: 53 },
     ],
-    aiComment: `${profile.sportLabel}을 즐기시는 분답게 전반적인 체력이 양호한 편이에요. **유연성과 코어 안정성**을 강화하면 더 좋은 퍼포먼스를 기대할 수 있어요.`,
+    aiComment: isNonExerciser
+      ? "전반적인 기초 체력이 양호한 편이에요. **유연성과 하체 근력**을 강화하면 일상생활이 훨씬 편해질 수 있어요."
+      : `${profile.sportLabel}을 즐기시는 분답게 전반적인 체력이 양호한 편이에요. **유연성과 코어 안정성**을 강화하면 더 좋은 퍼포먼스를 기대할 수 있어요.`,
     recommendations: [
-      { id: "ex1", name: "의자 스쿼트", description: "의자 앞에 서서 천천히 앉았다 일어나는 운동", targetArea: "하체", sets: 3, reps: 10, benefit: `${profile.sportLabel}에 필요한 하체 근력을 키워요` },
-      { id: "ex2", name: "한 발 서기", description: "한 발로 서서 10초간 균형 잡기", targetArea: "밸런스", sets: 3, reps: 15, benefit: `${profile.sportLabel} 시 안정감을 높여줘요` },
+      { id: "ex1", name: "의자 스쿼트", description: "의자 앞에 서서 천천히 앉았다 일어나는 운동", targetArea: "하체", sets: 3, reps: 10, benefit: isNonExerciser ? "일상에서 필요한 하체 근력을 키워요" : `${profile.sportLabel}에 필요한 하체 근력을 키워요` },
+      { id: "ex2", name: "한 발 서기", description: "한 발로 서서 10초간 균형 잡기", targetArea: "밸런스", sets: 3, reps: 15, benefit: isNonExerciser ? "걸을 때 안정감을 높여줘요" : `${profile.sportLabel} 시 안정감을 높여줘요` },
       { id: "ex3", name: "어깨 스트레칭", description: "양팔을 번갈아 머리 위로 올리는 스트레칭", targetArea: "상체", sets: 2, reps: 10, benefit: "상체 유연성을 개선해요" },
       { id: "ex4", name: "코어 호흡 운동", description: "복부에 힘을 주면서 깊게 호흡하는 운동", targetArea: "코어", sets: 3, reps: 8, benefit: "코어 안정성과 회복력을 높여요" },
     ],

@@ -517,13 +517,17 @@ function HybridChatFlow() {
       }
       case 3: { // 스포츠 — 키워드 추출
         // 부정적인 답변 체크 (운동 안 함)
-        const negativeKeywords = ["안해", "안 해", "없어", "하지 않", "안 함", "숨쉬기", "없음"];
+        const negativeKeywords = [
+          "안해", "안 해", "안하", "안 하", "없어", "하지 않", "안 함", "안함",
+          "숨쉬기", "없음", "없는데", "딱히", "특별히", "안합니다", "안 합니다",
+          "모르겠", "글쎄", "안해요", "안 해요", "안하는", "안 하는",
+        ];
         const isNegative = negativeKeywords.some((k) => answer.includes(k));
 
         if (isNegative) {
-          updateProfile({ sport: "none", sportLabel: "운동 안 함", subSports: [] });
-          setStep(4);
-          await delayMsg(`괜찮습니다! 😊 오히려 **처음 시작하시기 좋은 타이밍**이에요.\n그럼 평소에 **활동적인 움직임**은 좀 있으신 편인가요?`);
+          updateProfile({ sport: "none", sportLabel: "운동 안 함", subSports: [], experience: "none" });
+          setStep(5); // 숙련도(Step4) 건너뛰고 바로 목표(Step5)로
+          await delayMsg(`괜찮습니다! 😊 오히려 **처음 시작하시기 좋은 타이밍**이에요.\n그럼 운동을 시작한다면 **어떤 것을 가장 원하시나요**?`);
         } else {
           const extracted = extractSportNames(answer);
           if (extracted.main) {
@@ -674,9 +678,10 @@ function HybridChatFlow() {
     setSelectedChipIds([]);
     setCurrentAIChips([]);
 
-    // "없음" 계열 답변이면 추가 질문 스킵하고 바로 결과로
-    const skipKeywords = ["없음", "딱히", "특별히", "모르겠", "괜찮", "없어요", "없습니다"];
-    const isSkipAnswer = skipKeywords.some((k) => val.includes(k));
+    // "없음" 계열 단답이면 추가 질문 스킵하고 바로 결과로
+    // 단, 문장 길이가 짧을 때만 (긴 답변은 실제 응답일 가능성 높음)
+    const skipKeywords = ["없음", "딱히 없", "특별히 없", "모르겠어", "없어요", "없습니다", "패스", "넘어가"];
+    const isSkipAnswer = val.length <= 15 && skipKeywords.some((k) => val.includes(k));
 
     const nextStep = step + 1;
     // 스킵 답변이면 남은 질문을 모두 건너뛰고 결과 화면으로

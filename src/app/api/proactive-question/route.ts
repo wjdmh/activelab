@@ -26,11 +26,18 @@ export async function POST(request: Request) {
     ].filter(Boolean).join(", ");
 
     if (!apiKey) {
-      const fallbacks = [
-        `${body.nickname}님, 이번 주말 ${body.sportLabel} 계획 있으신가요? 미리 준비 루틴을 알려드릴게요! 🏌️`,
-        `${body.nickname}님, 어제 운동 후 몸 상태는 어떠세요? 회복이 잘 되고 있는지 체크해볼까요?`,
-        `${body.nickname}님, 요즘 ${body.sportLabel} 하실 때 예전보다 나아진 점이 느껴지시나요?`,
-      ];
+      const isNonEx = !body.sportLabel || body.sportLabel === "운동 안 함" || body.sportLabel === "none";
+      const fallbacks = isNonEx
+        ? [
+            `${body.nickname}님, 오늘 가벼운 스트레칭으로 하루를 시작해볼까요? 🧘`,
+            `${body.nickname}님, 어제 몸 상태는 어떠세요? 간단한 회복 루틴을 알려드릴게요!`,
+            `${body.nickname}님, 요즘 걷기나 계단 오르기가 좀 편해지셨나요?`,
+          ]
+        : [
+            `${body.nickname}님, 이번 주말 ${body.sportLabel} 계획 있으신가요? 미리 준비 루틴을 알려드릴게요! 🏌️`,
+            `${body.nickname}님, 어제 운동 후 몸 상태는 어떠세요? 회복이 잘 되고 있는지 체크해볼까요?`,
+            `${body.nickname}님, 요즘 ${body.sportLabel} 하실 때 예전보다 나아진 점이 느껴지시나요?`,
+          ];
       return NextResponse.json({
         question: fallbacks[Math.floor(Math.random() * fallbacks.length)],
       });

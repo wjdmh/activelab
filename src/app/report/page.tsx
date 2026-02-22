@@ -163,8 +163,8 @@ export default function ReportPage() {
   return (
     <div className="flex flex-col min-h-dvh bg-bg-primary">
       {/* Header */}
-      <div className="relative bg-gradient-to-br from-primary via-[#4B95F9] to-[#6BABFF] px-5 pt-5 pb-12 overflow-hidden">
-        <div className="flex items-center justify-between mb-8">
+      <div className="relative bg-gradient-to-br from-primary via-[#4B95F9] to-[#6BABFF] px-5 pt-5 pb-16 overflow-hidden">
+        <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => router.back()}
             className="w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center active:bg-white/25 transition-colors"
@@ -178,38 +178,75 @@ export default function ReportPage() {
           <div className="w-9" />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <p className="text-[13px] text-white/60 font-medium mb-1">
-            {nickname}님의 체력 리포트
-          </p>
-          <h1 className="text-[26px] font-bold text-white leading-tight tracking-tight">
-            스포츠 나이
-          </h1>
-          <div className="flex items-baseline gap-2 mt-3">
-            <span className="text-[52px] font-black text-white leading-none">
-              {sportsAge}
-            </span>
-            <span className="text-[18px] font-bold text-white/60">세</span>
-          </div>
-          <div className="mt-3 inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full">
-            <span className="text-[13px] font-semibold text-white">
-              {ageLabel}
-            </span>
-          </div>
-        </motion.div>
+        <div className="flex items-end justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex-1"
+          >
+            <p className="text-[13px] text-white/60 font-medium mb-1">
+              {nickname}님의 체력 리포트
+            </p>
+            <h1 className="text-[26px] font-bold text-white leading-tight tracking-tight">
+              스포츠 나이
+            </h1>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-[52px] font-black text-white leading-none">
+                {sportsAge}
+              </span>
+              <span className="text-[18px] font-bold text-white/60">세</span>
+            </div>
+            <div className="mt-3 inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full">
+              <span className="text-[13px] font-semibold text-white">
+                {ageLabel}
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Score gauge */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex-shrink-0 ml-4"
+          >
+            <div className="relative w-[100px] h-[100px]">
+              <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="white" strokeOpacity="0.15" strokeWidth="6" />
+                <circle
+                  cx="50" cy="50" r="42"
+                  fill="none"
+                  stroke="white"
+                  strokeOpacity="0.9"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(avgScore / 100) * 263.9} 263.9`}
+                  transform="rotate(-90 50 50)"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[24px] font-black text-white leading-none">{avgScore}</span>
+                <span className="text-[10px] font-semibold text-white/60 mt-0.5">체력 점수</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
 
         {/* Decorative elements */}
-        <div className="absolute top-8 right-4 w-24 h-24 rounded-full bg-white/[0.04] blur-xl" />
-        <div className="absolute bottom-2 right-12 w-16 h-16 rounded-full bg-white/[0.06] blur-lg" />
-        <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-white/[0.03] blur-2xl" />
+        <div className="absolute top-6 right-0 w-40 h-40 rounded-full bg-white/[0.04] blur-2xl" />
+        <div className="absolute top-20 right-24 w-20 h-20 rounded-full bg-white/[0.06] blur-xl" />
+        <div className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full bg-white/[0.05] blur-2xl" />
+        <div className="absolute bottom-10 left-1/3 w-12 h-12 rounded-full bg-white/[0.04] blur-lg" />
+
+        {/* Bottom wave decoration */}
+        <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 375 24" fill="none" preserveAspectRatio="none" style={{ height: 24 }}>
+          <path d="M0 24V12C62.5 0 125 0 187.5 6C250 12 312.5 18 375 12V24H0Z" fill="var(--color-bg-primary, #F7F8FA)" />
+        </svg>
       </div>
 
       {/* Content */}
-      <div className="flex-1 -mt-4 bg-bg-primary rounded-t-3xl relative z-10 px-5 pt-6 pb-10">
+      <div className="flex-1 bg-bg-primary relative z-10 px-5 pt-2 pb-10">
         {/* Age Comparison */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -309,55 +346,64 @@ export default function ReportPage() {
           </Card>
         </motion.div>
 
-        {/* Recommendations */}
-        {recommendations && recommendations.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-          >
-            <Card variant="elevated" className="mb-5">
-              <h2 className="text-[16px] font-bold text-text-primary tracking-tight mb-1">
-                {isNonExerciser ? "건강한 일상을 위한 추천 운동" : `${sportLabel} 퍼포먼스를 위한 추천 운동`}
+        {/* Testimonials */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+        >
+          <Card variant="elevated" className="mb-5">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[18px]">💬</span>
+              <h2 className="text-[16px] font-bold text-text-primary tracking-tight">
+                실제 사용자들의 변화
               </h2>
-              <p className="text-[13px] text-text-caption mb-4">준비운동 → 본운동 → 마무리운동 순서로 구성</p>
-              <div className="space-y-3">
-                {recommendations.map((rec: { id: string; name: string; description: string; targetArea: string; sets: number; reps: number; benefit?: string }, i: number) => {
-                  const phase = i === 0 ? "준비운동" : i === recommendations.length - 1 ? "마무리" : "본운동";
-                  const phaseColor = i === 0 ? "text-[#FF9500] bg-[#FF9500]/8" : i === recommendations.length - 1 ? "text-[#34C759] bg-[#34C759]/8" : "text-primary bg-primary/8";
-                  return (
-                    <div key={rec.id} className="flex gap-3 p-3 rounded-xl bg-bg-warm">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-[13px] font-bold ${phaseColor}`}>
-                        {i + 1}
+            </div>
+            <div className="space-y-3">
+              {[
+                { name: "김*수", sport: "골프", age: 62, review: "스포츠 나이가 5살 젊어졌어요! 라운딩 후 허리 통증도 줄었습니다.", stars: 5 },
+                { name: "박*영", sport: "테니스", age: 57, review: "맞춤 트레이닝 덕분에 서브 속도가 확 늘었어요. 코트에서 자신감이 생겼습니다.", stars: 5 },
+                { name: "이*희", sport: "등산", age: 65, review: "무릎 걱정 없이 산행을 즐기게 됐어요. 하산할 때 통증이 거의 없어졌습니다.", stars: 5 },
+              ].map((t, i) => (
+                <div key={i} className="p-4 rounded-2xl bg-bg-warm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-[13px] font-bold text-primary">{t.name[0]}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="text-[14px] font-semibold text-text-primary">{rec.name}</p>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${phaseColor}`}>{phase}</span>
-                        </div>
-                        <p className="text-[12px] text-text-caption">{rec.targetArea} · {rec.sets}세트 {rec.reps}회</p>
-                        {rec.benefit && (
-                          <p className="text-[12px] text-primary/80 mt-1">{rec.benefit}</p>
-                        )}
+                      <div>
+                        <p className="text-[13px] font-bold text-text-primary">{t.name}</p>
+                        <p className="text-[11px] text-text-caption">{t.sport} · {t.age}세</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </Card>
-          </motion.div>
-        )}
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: t.stars }, (_, j) => (
+                        <span key={j} className="text-[12px] text-[#FFB800]">★</span>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-[13px] text-text-secondary leading-relaxed">
+                    &ldquo;{t.review}&rdquo;
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
 
         {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65 }}
+          transition={{ delay: 0.55 }}
           className="space-y-3"
         >
           <div className="text-center mb-1">
-            <p className="text-[14px] text-text-secondary font-medium">
-              맞춤 트레이닝을 시작해보세요
+            <p className="text-[15px] font-bold text-text-primary tracking-tight">
+              나도 변화를 경험해보고 싶다면?
+            </p>
+            <p className="text-[13px] text-text-caption mt-1">
+              내 체력 상태에 딱 맞는 트레이닝을 시작해보세요
             </p>
           </div>
           <Button onClick={async () => {
@@ -373,7 +419,7 @@ export default function ReportPage() {
               router.push("/login?next=/");
             }
           }}>
-            트레이닝 시작하기
+            나만의 맞춤 트레이닝 경험해보기
           </Button>
           <button
             onClick={() => router.push("/login?next=/")}

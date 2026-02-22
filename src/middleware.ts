@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // 인증 없이 접근 가능한 경로
-const PUBLIC_PATHS = ['/', '/login', '/manifest.webmanifest']
+const PUBLIC_PATHS = ['/', '/login', '/coach', '/report', '/manifest.webmanifest']
 const PUBLIC_PREFIXES = ['/auth/', '/api/']
 
 export async function middleware(request: NextRequest) {

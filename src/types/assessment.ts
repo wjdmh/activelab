@@ -6,6 +6,13 @@ export type AssessmentTrack = "vitality" | "wellness";
 // 진단 모드: minimal(4단계) vs full(기존 15~17단계)
 export type AssessmentMode = "minimal" | "full";
 
+// ACSM 신체활동 수준 (지난 3개월 기준)
+export type ActivityLevel = "active" | "inactive";
+
+// ACSM 처방 위험도 분류
+// green: 정상 처방 / yellow: 제한적 처방(고강도 금지) / red: 처방 보류(의사 상담 필요) / emergency: 즉시 중단
+export type AcsmRiskLevel = "green" | "yellow" | "red" | "emergency";
+
 // 목표 활동 카테고리
 export type GoalActivity =
   | "walking"
@@ -30,6 +37,11 @@ export interface AssessmentData {
   // === 진단 모드 ===
   mode: AssessmentMode;
 
+  // === ACSM 사전 선별 ===
+  activityLevel: ActivityLevel | null;        // Step 1: 현재 활동 수준
+  acsmSymptoms: string[];                      // Step 2: 9대 위험 증상
+  acsmRiskLevel: AcsmRiskLevel | null;         // Step 3: AI 처방 분기 결과
+
   // === 공통 (Common) ===
   nickname: string;
   gender: Gender | null;
@@ -42,7 +54,7 @@ export interface AssessmentData {
   goalActivities: GoalActivity[]; // 선택한 목표 활동들
   specificGoals: string[]; // 활동별 구체적 목표
 
-  // === Track A: Vitality (액티브 시니어) ===
+  // === Track A: Vitality (스포츠·퍼포먼스) ===
   sports: string[]; // 선택한 스포츠/활동
   performanceConcerns: string[]; // 퍼포먼스 고민
   customPerformanceConcern: string;
@@ -77,6 +89,11 @@ export interface AssessmentData {
 
 export const INITIAL_ASSESSMENT: AssessmentData = {
   mode: "minimal",
+
+  // ACSM
+  activityLevel: null,
+  acsmSymptoms: [],
+  acsmRiskLevel: null,
 
   nickname: "",
   gender: null,

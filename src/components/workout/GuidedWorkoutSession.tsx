@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useWorkoutStore } from "@/stores/useWorkoutStore";
 import { useUserStore } from "@/stores/useUserStore";
+import { useWorkoutVoice } from "@/hooks/useWorkoutVoice";
 import { WorkoutTimer } from "./WorkoutTimer";
 import { PostWorkoutFeedback } from "./PostWorkoutFeedback";
 import { RPE_LEVELS } from "@/lib/constants";
@@ -51,6 +52,57 @@ export function GuidedWorkoutSession({
   const profile = useUserStore((s) => s.profile);
 
   const [selectedRPE, setSelectedRPE] = useState<RPELevel | null>(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const voice = useWorkoutVoice();
+  const prevPhaseRef = useRef<string>("");
+  const prevExerciseIdxRef = useRef<number>(-1);
+
+  // ── TTS 페이즈 연동 (State Machine) ──
+  useEffect(() => {
+    if (!isVisible || !activeSession || !weeklyPlan || !voiceEnabled) return;
+    const dayPlan = weeklyPlan.weeklyPlan?.[activeSession.dayIndex];
+    const exercises = dayPlan?.exercises ?? [];
+    const currentEx = exercises[activeSession.exerciseIndex];
+    const { phase, currentSet, exerciseIndex } = activeSession;
+    const phaseKey = `${phase}-${exerciseIndex}-${currentSet}`;
+
+    if (prevPhaseRef.current === phaseKey) return;
+    prevPhaseRef.current = phaseKey;
+
+    switch (phase) {
+      case "instructing":
+        if (currentEx) voice.speakInstruction(currentEx.name, currentEx.description);
+        break;
+      case "active":
+        if (currentEx && prevExerciseIdxRef.current !== exerciseIndex) {
+          prevExerciseIdxRef.current = exerciseIndex;
+          voice.speakDetecting(currentEx.name, currentEx.reps);
+        }
+        break;
+      case "resting":
+        if (currentEx) voice.speakSetSuccess(currentSet, currentEx.sets);
+        break;
+      case "exercise-done": {
+        const doneEx = exercises[exerciseIndex - 1] ?? currentEx;
+        const nextEx = exercises[exerciseIndex];
+        if (doneEx) {
+          if (nextEx) {
+            voice.speakExerciseDone(doneEx.name);
+            setTimeout(() => voice.speakNextExercise(nextEx.name), 3500);
+          } else {
+            voice.speakExerciseDone(doneEx.name);
+          }
+        }
+        break;
+      }
+      case "complete":
+        voice.speakAllDone();
+        break;
+      default:
+        break;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession?.phase, activeSession?.exerciseIndex, activeSession?.currentSet, isVisible, voiceEnabled]);
 
   if (!isVisible || !activeSession || !weeklyPlan) return null;
 
@@ -89,7 +141,7 @@ export function GuidedWorkoutSession({
   };
 
   const handleNextExercise = () => {
-    setSessionPhase("intro");
+    setSessionPhase("instructing");
   };
 
   const handleRPESelect = (level: RPELevel) => {
@@ -116,9 +168,26 @@ export function GuidedWorkoutSession({
           transition={{ duration: 0.25 }}
           className="fixed inset-0 z-[100] bg-bg-primary flex flex-col overflow-y-auto"
         >
-          {/* Close button - always visible except during complete */}
+          {/* Header - close + voice toggle */}
           {phase !== "complete" && (
-            <div className="flex items-center justify-end px-5 pt-4 pb-2 flex-shrink-0">
+            <div className="flex items-center justify-between px-5 pt-4 pb-2 flex-shrink-0">
+              {/* Voice toggle */}
+              <button
+                onClick={() => {
+                  setVoiceEnabled((v) => !v);
+                  if (voiceEnabled) voice.stop();
+                }}
+                className={`flex items-center gap-1.5 px-3 h-9 rounded-full text-[13px] font-semibold transition-colors ${
+                  voiceEnabled
+                    ? "bg-primary/10 text-primary"
+                    : "bg-bg-warm text-text-caption"
+                }`}
+                aria-label="음성 가이드 토글"
+              >
+                <span>{voiceEnabled ? "🔊" : "🔇"}</span>
+                <span>{voiceEnabled ? "음성 ON" : "음성 OFF"}</span>
+              </button>
+
               <button
                 onClick={handleClose}
                 className="w-11 h-11 flex items-center justify-center rounded-full bg-bg-warm active:bg-border-card transition-colors"
@@ -140,6 +209,98 @@ export function GuidedWorkoutSession({
           {/* Phase content */}
           <div className="flex-1 flex flex-col px-6 pb-8">
             <AnimatePresence mode="wait">
+              {/* ===== INSTRUCTING PHASE (사전 안내) ===== */}
+              {phase === "instructing" && currentExercise && (
+                <motion.div
+                  key={`instructing-${exerciseIndex}`}
+                  {...phaseTransition}
+                  className="flex-1 flex flex-col"
+                >
+                  <div className="mb-4">
+                    <p className="text-[15px] text-text-caption font-medium">
+                      운동 {exerciseIndex + 1} / {totalExercises} — 사전 안내
+                    </p>
+                  </div>
+
+                  {/* 타입 배지 */}
+                  <div className="flex gap-2 mb-3 flex-wrap">
+                    {currentExercise.type && (
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-[14px] font-semibold ${
+                          (TYPE_STYLES[currentExercise.type] ?? { bg: "bg-primary-50", text: "text-primary" }).bg
+                        } ${
+                          (TYPE_STYLES[currentExercise.type] ?? { bg: "bg-primary-50", text: "text-primary" }).text
+                        }`}
+                      >
+                        {currentExercise.type}
+                      </span>
+                    )}
+                    <span className="inline-block px-3 py-1 rounded-full bg-primary-50 text-primary text-[14px] font-semibold">
+                      {currentExercise.targetArea}
+                    </span>
+                  </div>
+
+                  {/* 운동명 */}
+                  <h1 className="text-[26px] font-bold text-text-primary leading-tight tracking-tight mb-3">
+                    {currentExercise.name}
+                  </h1>
+
+                  {/* 동작 설명 카드 */}
+                  <div className="p-5 rounded-2xl bg-bg-warm mb-4">
+                    <p className="text-[13px] font-semibold text-text-caption mb-2 uppercase tracking-wider">
+                      동작 설명
+                    </p>
+                    <p className="text-[17px] text-text-primary leading-relaxed">
+                      {currentExercise.description}
+                    </p>
+                  </div>
+
+                  {/* 목표 효과 */}
+                  {currentExercise.benefit && (
+                    <div className="flex items-start gap-3 p-4 rounded-2xl bg-primary-50/60 mb-3">
+                      <span className="text-[17px] flex-shrink-0">💪</span>
+                      <p className="text-[15px] text-primary font-medium leading-snug">
+                        {currentExercise.benefit}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 안전 주의 */}
+                  {currentExercise.safetyNote && (
+                    <div className="flex items-start gap-3 p-4 rounded-2xl bg-warning-light mb-4">
+                      <span className="text-[17px] flex-shrink-0">⚠️</span>
+                      <p className="text-[15px] text-text-secondary font-medium leading-snug">
+                        {currentExercise.safetyNote}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 세트/횟수 */}
+                  <div className="flex gap-2 flex-wrap mb-8">
+                    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-bg-warm">
+                      <span className="text-[14px] text-text-caption">세트</span>
+                      <span className="text-[17px] font-bold text-text-primary">{currentExercise.sets}세트</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-bg-warm">
+                      <span className="text-[14px] text-text-caption">반복</span>
+                      <span className="text-[17px] font-bold text-text-primary">{currentExercise.reps}회</span>
+                    </div>
+                  </div>
+
+                  {/* 시작 버튼 */}
+                  <div className="mt-auto">
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      onClick={() => setSessionPhase("intro")}
+                      className="w-full min-h-[60px] px-8 text-[18px] font-bold rounded-2xl bg-gradient-to-b from-primary to-[#E84A10] text-white shadow-button active:shadow-none active:translate-y-[1px] transition-all"
+                    >
+                      동작 익혔어요, 시작할게요!
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+
               {/* ===== INTRO PHASE ===== */}
               {phase === "intro" && currentExercise && (
                 <motion.div

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const hour = new Date().getHours();
     const timeOfDay = hour < 6 ? "새벽" : hour < 12 ? "아침" : hour < 18 ? "오후" : "저녁";
 
-    const prompt = `너는 ON-U(온유) 앱의 50~60대 액티브 시니어 전문 AI 피지컬 코치다.
+    const prompt = `너는 ON-U(온유) 앱의 스포츠 재활·롱런 퍼포먼스 전문 AI 피지컬 코치다.
 사용자가 앱을 열었을 때 보여줄 맞춤 인사말을 작성해라.
 전문적이면서도 따뜻한 톤으로, 스포츠 코칭 관점에서 인사한다.
 

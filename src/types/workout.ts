@@ -50,7 +50,7 @@ export interface WorkoutLog {
   reps?: number;
 }
 
-export type SessionPhase = 'intro' | 'active' | 'resting' | 'exercise-done' | 'complete' | 'feedback';
+export type SessionPhase = 'instructing' | 'intro' | 'active' | 'resting' | 'exercise-done' | 'complete' | 'feedback';
 
 export interface ActiveSession {
   dayIndex: number;

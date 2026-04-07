@@ -9,11 +9,13 @@ interface UserState {
   profile: UserProfile | null;
   preferences: UserPreferences;
   hasCompletedAssessment: boolean;
+  visionScanSkipped: boolean;   // 카메라 체형 검사 건너뜀 여부
 
   // Actions
   setProfile: (profile: UserProfile) => void;
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
   setAssessmentComplete: () => void;
+  setVisionScanSkipped: (v: boolean) => void;
   resetAll: () => void;
 
   // Supabase Sync
@@ -29,6 +31,7 @@ export const useUserStore = create<UserState>()(
         fontSize: "large",
       },
       hasCompletedAssessment: false,
+      visionScanSkipped: false,
 
       setProfile: (profile) => set({ profile }),
 
@@ -38,11 +41,13 @@ export const useUserStore = create<UserState>()(
         })),
 
       setAssessmentComplete: () => set({ hasCompletedAssessment: true }),
+      setVisionScanSkipped: (v) => set({ visionScanSkipped: v }),
 
       resetAll: () =>
         set({
           profile: null,
           hasCompletedAssessment: false,
+          visionScanSkipped: false,
           preferences: { theme: "light", fontSize: "large" },
         }),
 
@@ -100,6 +105,7 @@ export const useUserStore = create<UserState>()(
         profile: state.profile,
         preferences: state.preferences,
         hasCompletedAssessment: state.hasCompletedAssessment,
+        visionScanSkipped: state.visionScanSkipped,
       }),
     }
   )

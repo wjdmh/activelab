@@ -9,6 +9,7 @@ import { useWorkoutStore } from "@/stores/useWorkoutStore";
 import { useCoachStore } from "@/stores/useCoachStore";
 import { Button } from "@/components/ui/Button";
 import { LoadingScreen } from "@/components/shared/LoadingScreen";
+import { classifyAcsmRisk } from "@/lib/acsm";
 import { NicknameStep } from "./steps/NicknameStep";
 import { GoalSelectionStep } from "./steps/GoalSelectionStep";
 import { HealthSafetyStep } from "./steps/HealthSafetyStep";
@@ -23,8 +24,9 @@ import { SarcfStep } from "./steps/SarcfStep";
 import { PainAreaStep } from "./steps/PainAreaStep";
 import { MotivationEnvStep } from "./steps/MotivationEnvStep";
 import { ExerciseHistoryTimeStep } from "./steps/ExerciseHistoryTimeStep";
+import { VisionCameraStep } from "./steps/VisionCameraStep";
 import type { UserProfile, Gender } from "@/types/user";
-import type { AssessmentTrack, FitnessLevel, GoalActivity } from "@/types/assessment";
+import type { AssessmentTrack, FitnessLevel, GoalActivity, ActivityLevel } from "@/types/assessment";
 
 export function WizardContainer() {
   const router = useRouter();
@@ -46,10 +48,12 @@ export function WizardContainer() {
 
   const setProfile = useUserStore((s) => s.setProfile);
   const setAssessmentComplete = useUserStore((s) => s.setAssessmentComplete);
+  const setVisionScanSkipped = useUserStore((s) => s.setVisionScanSkipped);
   const setWeeklyPlan = useWorkoutStore((s) => s.setWeeklyPlan);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showVisionStep, setShowVisionStep] = useState(false);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const autoAdvanceAfter = (fn: () => void, delay = 400) => {
@@ -60,9 +64,20 @@ export function WizardContainer() {
     }, delay);
   };
 
+  // Vision 스텝 완료 후 실제 플랜 생성
+  const handleVisionComplete = async (skipped: boolean) => {
+    setVisionScanSkipped(skipped);
+    setShowVisionStep(false);
+    await generatePlan(skipped);
+  };
+
+  // 마지막 스텝에서 Vision 유도 화면 먼저 표시
   const handleSubmit = async () => {
     if (!canProceed) return;
+    setShowVisionStep(true);
+  };
 
+  const generatePlan = async (visionSkipped: boolean) => {
     const isMinimal = data.mode === "minimal";
 
     const currentYear = new Date().getFullYear();
@@ -109,12 +124,25 @@ export function WizardContainer() {
       createdAt: new Date().toISOString(),
     };
 
+    // ACSM 최종 위험도 계산 (카메라 건너뛰기 시 안전 최우선 → 비활동자 처리)
+    const effectiveActivityLevel = visionSkipped ? "inactive" : data.activityLevel;
+    const acsmRiskLevel = classifyAcsmRisk({
+      activityLevel: effectiveActivityLevel,
+      conditions: data.conditions,
+      acsmSymptoms: data.acsmSymptoms,
+    });
+
     setProfile(profile);
     setIsLoading(true);
     setError(null);
 
     try {
-      const apiPayload = { ...data, ageGroup: isMinimal ? "" : ageGroup };
+      const apiPayload = {
+        ...data,
+        ageGroup: isMinimal ? "" : ageGroup,
+        acsmRiskLevel,
+        visionSkipped,
+      };
       const res = await fetch("/api/generate-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -193,13 +221,28 @@ export function WizardContainer() {
       case "healthSafety":
         return (
           <HealthSafetyStep
+            activityLevel={data.activityLevel}
             conditions={data.conditions}
             customCondition={data.customCondition}
+            acsmSymptoms={data.acsmSymptoms}
             painAreas={data.painAreas}
             customPainArea={data.customPainArea}
             freeNote={data.freeNote}
+            onActivityLevelChange={(v: ActivityLevel) => {
+              updateField("activityLevel", v);
+            }}
             onConditionsChange={(v) => updateField("conditions", v)}
             onCustomConditionChange={(v) => updateField("customCondition", v)}
+            onAcsmSymptomsChange={(v) => {
+              updateField("acsmSymptoms", v);
+              // ACSM 위험도 즉시 재계산
+              const risk = classifyAcsmRisk({
+                activityLevel: data.activityLevel,
+                conditions: data.conditions,
+                acsmSymptoms: v,
+              });
+              updateField("acsmRiskLevel", risk);
+            }}
             onPainAreasChange={(v) => updateField("painAreas", v)}
             onCustomPainAreaChange={(v) => updateField("customPainArea", v)}
             onFreeNoteChange={(v) => updateField("freeNote", v)}
@@ -331,6 +374,40 @@ export function WizardContainer() {
   return (
     <>
       <LoadingScreen nickname={data.nickname} isVisible={isLoading} />
+
+      {/* Vision Camera Step - 마지막 스텝 완료 후 오버레이 */}
+      <AnimatePresence>
+        {showVisionStep && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
+            className="fixed inset-0 z-50 bg-bg-page flex flex-col overflow-y-auto"
+          >
+            <div className="sticky top-0 z-40 bg-bg-page/80 backdrop-blur-xl">
+              <div className="flex items-center h-[52px] px-4">
+                <button
+                  onClick={() => setShowVisionStep(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-bg-warm transition-colors"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <div className="flex-1 text-center">
+                  <span className="text-[15px] font-semibold text-text-secondary">체형·자세 검사</span>
+                </div>
+                <div className="w-10" />
+              </div>
+              <div className="h-[2px] bg-primary" />
+            </div>
+            <div className="flex-1 px-5 py-6">
+              <VisionCameraStep onComplete={handleVisionComplete} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-col min-h-dvh bg-bg-page">
         {/* Header with chapter-based progress */}

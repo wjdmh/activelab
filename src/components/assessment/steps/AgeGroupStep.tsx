@@ -52,7 +52,7 @@ export function AgeGroupStep({ value, onChange }: AgeGroupStepProps) {
       {showWarning && (
         <div className="p-4 rounded-xl bg-primary-light border border-primary/20">
           <p className="text-[18px] text-primary font-medium">
-            본 서비스는 시니어 맞춤형이지만, 이용하셔도 좋습니다!
+            본 서비스는 부상 없이 오래 스포츠를 즐기고 싶은 모든 분을 위한 서비스예요!
           </p>
         </div>
       )}

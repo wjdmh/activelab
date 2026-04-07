@@ -1,5 +1,6 @@
 import type { AssessmentData } from "@/types/assessment";
 import { GOAL_ACTIVITY_OPTIONS, SPECIFIC_GOAL_OPTIONS } from "@/types/assessment";
+import { getAcsmPrescriptionConstraints, getSpecialConditionConstraints } from "@/lib/acsm";
 
 const GENDER_MAP: Record<string, string> = {
   male: "남성",
@@ -131,8 +132,14 @@ export function buildMinimalPrompt(data: AssessmentData): string {
   const isNonExerciser = !goalLabels || goalLabels.includes("전신 근력") || goalLabels.includes("통증 관리");
   const targetDesc = isNonExerciser ? "건강한 일상을 위한" : `${goalLabels}을 위한`;
 
-  return `너는 NSCA-CSCS 자격의 50~60대 액티브 시니어 전문 피지컬 코치다.
-사용자의 목표와 건강 상태를 기반으로, 안전하고 효과적인 7일 운동 프로그램을 설계한다.
+  const acsmConstraints = getAcsmPrescriptionConstraints(data.acsmRiskLevel ?? null);
+  const specialConstraints = getSpecialConditionConstraints(data.conditions || []);
+
+  return `너는 ACSM(미국 스포츠의학회) 11판 가이드라인을 따르는 스포츠 재활·롱런 퍼포먼스 전문 피지컬 코치다.
+사용자의 목표와 건강 상태를 기반으로, 부상 없이 오래 스포츠를 즐길 수 있도록 안전하고 효과적인 7일 운동 프로그램을 설계한다.
+
+${acsmConstraints}
+${specialConstraints}
 
 ## [사용자 정보]
 - **닉네임**: ${data.nickname}
@@ -274,8 +281,14 @@ export function buildPrompt(data: AssessmentData): string {
   const isNonExerciser = exerciseHistory === "없음" || exerciseHistory.includes("운동 경험 없음");
   const targetDesc = isNonExerciser ? "건강한 일상을 위한" : `${motivation}을(를) 위한`;
 
-  return `너는 NSCA-CSCS 자격의 50~60대 액티브 시니어 전문 피지컬 코치다.
-사용자가 근육 감소를 막고, **"하고 싶은 일"을 포기하지 않는 활력 넘치는 삶**을 살도록 돕는다.
+  const acsmConstraints = getAcsmPrescriptionConstraints(data.acsmRiskLevel ?? null);
+  const specialConstraints = getSpecialConditionConstraints(data.conditions || []);
+
+  return `너는 ACSM(미국 스포츠의학회) 11판 가이드라인을 따르는 스포츠 재활·롱런 퍼포먼스 전문 피지컬 코치다.
+사용자가 **부상 없이 건강하게 스포츠를 즐기며 롱런 퍼포먼스**를 유지할 수 있도록 돕는다.
+
+${acsmConstraints}
+${specialConstraints}
 
 ## [핵심 처방 원칙]
 1. **준비운동 → 본운동 → 마무리운동** 순서를 반드시 지켜라

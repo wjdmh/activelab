@@ -37,6 +37,10 @@ function migrateData(data: AssessmentData): AssessmentData {
   if (!migrated.customEnvironment) migrated.customEnvironment = "";
   if (!migrated.customPerformanceConcern) migrated.customPerformanceConcern = "";
   if (!migrated.freeNote) migrated.freeNote = "";
+  // ACSM fields migration
+  if (!migrated.activityLevel) migrated.activityLevel = null;
+  if (!migrated.acsmSymptoms) migrated.acsmSymptoms = [];
+  if (!migrated.acsmRiskLevel) migrated.acsmRiskLevel = null;
   return migrated;
 }
 
@@ -94,7 +98,12 @@ export function useAssessment() {
       case "goalSelection":
         return data.goalActivities.length > 0;
       case "healthSafety":
-        return data.conditions.length > 0 && data.painAreas.length > 0;
+        return (
+          data.activityLevel !== null &&
+          data.conditions.length > 0 &&
+          data.acsmSymptoms.length > 0 &&
+          data.painAreas.length > 0
+        );
       // fitnessCheck는 minimal과 full 모두에서 사용되므로 아래 case에서 처리
 
       // === Full flow ===

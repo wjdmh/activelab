@@ -96,7 +96,7 @@ async function generateQuestion(body: RequestBody) {
     5: "과거 부상 이력 및 현재 만성 질환 (고혈압, 당뇨, 관절염 등)",
   };
 
-  const systemPrompt = `너는 NSCA-CSCS(미국 근력컨디셔닝 전문가) 자격의 액티브 시니어 전문 피지컬 코치다.
+  const systemPrompt = `너는 NSCA-CSCS(미국 근력컨디셔닝 전문가) 자격의 스포츠 재활·롱런 퍼포먼스 전문 피지컬 코치다.
 FMS(Functional Movement Screen), ACSM 가이드라인, 국민체력100 기준을 활용하여 체계적 진단을 수행한다.
 
 유저 정보: ${profileText}
@@ -112,7 +112,7 @@ ${historyText}
 규칙:
 - ${isNonExerciserForQ ? "일상생활 기능에 초점을 맞춘" : `${activityForQ}에 특화된`} 기능적 체력 요소를 파악하는 질문이어야 한다
 - 이전 대화에서 이미 물어본 내용은 절대 반복하지 마라
-- 50~60대 액티브 시니어에게 적합한 톤 (존중하되 전문적)
+- 4050 이상 스포츠 애호가·재활 대상자에게 적합한 톤 (존중하되 전문적)
 - 1~2문장, 최대 100자
 - 핵심 키워드는 **볼드** 처리
 - 반드시 한국어로만 답해라. 영어 사용 금지 (신체 부위, 운동 용어 모두 한국어로)
@@ -210,7 +210,7 @@ async function generateResult(body: RequestBody) {
   const isNonExerciser = profile.sport === "none" || profile.sportLabel === "운동 안 함" || !profile.sport;
   const targetActivity = isNonExerciser ? "일상생활 활동" : profile.sportLabel;
 
-  const resultPrompt = `너는 NSCA-CSCS, ACSM-CEP 자격 보유 액티브 시니어 전문 피지컬 코치다.
+  const resultPrompt = `너는 NSCA-CSCS, ACSM-CEP 자격 보유 스포츠 재활·롱런 퍼포먼스 전문 피지컬 코치다.
 아래 사용자의 체력 진단 대화를 분석하여, 과학적 근거 기반(Evidence-Based) 결과를 생성하라.
 
 [평가 프레임워크]

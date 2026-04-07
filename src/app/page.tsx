@@ -13,6 +13,7 @@ import { useAssessmentStore } from "@/stores/useAssessmentStore";
 import { useAchievementStore } from "@/stores/useAchievementStore";
 import { useHydration } from "@/hooks/useHydration";
 import { useAuth } from "@/hooks/useAuth";
+import { VisionScanBanner } from "@/components/dashboard/VisionScanBanner";
 
 function getTodayIndex(): number {
   const jsDay = new Date().getDay();
@@ -401,6 +402,8 @@ function HomeMain() {
   return (
     <>
       <Header />
+      {/* Vision 재유도 배너 (카메라 검사를 건너뛴 유저에게 지속 노출) */}
+      <VisionScanBanner />
       <main className="px-5 pt-5 pb-28">
         {/* Greeting Section */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-5">

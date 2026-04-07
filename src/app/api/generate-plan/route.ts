@@ -4,6 +4,7 @@ import { validateAssessmentData, validateMinimalAssessment } from "@/lib/validat
 import { getFallbackPlan } from "@/lib/fallbackPlan";
 import { NextResponse } from "next/server";
 import type { AssessmentData } from "@/types/assessment";
+import type { AcsmRiskLevel } from "@/types/assessment";
 
 export async function POST(request: Request) {
   try {
@@ -72,6 +73,12 @@ export async function POST(request: Request) {
   }
 }
 
+// ACSM 고강도 동작 키워드 (yellow/red 위험도에서 필터링)
+const VIGOROUS_KEYWORDS = [
+  "버피", "점프", "스프린트", "인터벌", "플라이오", "맥스", "최대 근력",
+  "HIIT", "달리기", "전력 질주",
+];
+
 function applySafetyFilters(
   plan: Record<string, unknown>,
   assessment: AssessmentData
@@ -82,12 +89,16 @@ function applySafetyFilters(
 
   const hasHighBP = assessment.conditions.includes("high-blood-pressure");
   const hasOsteoporosis = assessment.conditions.includes("osteoporosis");
+  const hasArthritis = assessment.conditions.includes("arthritis");
   const hasFallRisk = assessment.sarcfFall === "1-3" || assessment.sarcfFall === "4-plus";
   const hasChairDifficulty = assessment.sarcfChair === "a_lot" || assessment.sarcfChair === "unable";
   const needsSupport = hasFallRisk || hasChairDifficulty;
+  const acsmRisk = (assessment as AssessmentData & { acsmRiskLevel?: AcsmRiskLevel }).acsmRiskLevel;
+  const blockVigorous = acsmRisk === "yellow" || acsmRisk === "red" || acsmRisk === "emergency";
 
-  const UNSAFE_FOR_BP = ["다운독", "앞으로 굽히기", "물구나무", "거꾸로", "숨 참"];
+  const UNSAFE_FOR_BP = ["다운독", "앞으로 굽히기", "물구나무", "거꾸로", "숨 참", "발살바"];
   const UNSAFE_FOR_OSTEO = ["크런치", "윗몸일으키기", "회전", "발끝 닿기"];
+  const UNSAFE_FOR_ARTHRITIS = ["점프", "뛰기", "플라이오", "버피"];
 
   for (const day of plan.weeklyPlan as Array<Record<string, unknown>>) {
     if (!day.exercises || !Array.isArray(day.exercises)) continue;
@@ -103,10 +114,20 @@ function applySafetyFilters(
             if (combined.includes(unsafe)) return false;
           }
         }
-
         if (hasOsteoporosis) {
           for (const unsafe of UNSAFE_FOR_OSTEO) {
             if (combined.includes(unsafe)) return false;
+          }
+        }
+        if (hasArthritis) {
+          for (const unsafe of UNSAFE_FOR_ARTHRITIS) {
+            if (combined.includes(unsafe)) return false;
+          }
+        }
+        // ACSM: yellow/red 위험도 - 고강도 동작 제거
+        if (blockVigorous) {
+          for (const kw of VIGOROUS_KEYWORDS) {
+            if (combined.includes(kw)) return false;
           }
         }
 
@@ -115,18 +136,18 @@ function applySafetyFilters(
     );
 
     if (needsSupport) {
-      for (const exercise of day.exercises as Array<
-        Record<string, unknown>
-      >) {
+      for (const exercise of day.exercises as Array<Record<string, unknown>>) {
         exercise.requiresSupport = true;
-        if (
-          exercise.safetyNote &&
-          !String(exercise.safetyNote).includes("잡고")
-        ) {
-          exercise.safetyNote =
-            "반드시 의자나 벽을 잡고 하세요. " + exercise.safetyNote;
+        if (exercise.safetyNote && !String(exercise.safetyNote).includes("잡고")) {
+          exercise.safetyNote = "반드시 의자나 벽을 잡고 하세요. " + exercise.safetyNote;
         }
       }
+    }
+
+    // ACSM red: 의사 상담 권고 배너를 첫 번째 운동 safetyNote에 삽입
+    if (acsmRisk === "red" && Array.isArray(day.exercises) && day.exercises.length > 0) {
+      const first = day.exercises[0] as Record<string, unknown>;
+      first.safetyNote = "⚠️ 의사 상담 후 운동을 시작하세요. " + (first.safetyNote || "");
     }
   }
 

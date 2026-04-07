@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    const prompt = `당신은 시니어 맞춤 운동 앱 "온유"의 AI 코치입니다.
+    const prompt = `당신은 스포츠 재활·롱런 퍼포먼스 앱 "온유"의 AI 코치입니다.
 사용자가 오늘 운동을 완료했습니다. 1~2문장으로 따뜻하게 격려해주세요.
 
 ## 오늘 운동 결과

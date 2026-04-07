@@ -135,7 +135,7 @@ export const useWorkoutStore = create<WorkoutState>()(
             dayIndex,
             exerciseIndex: 0,
             currentSet: 1,
-            phase: "intro",
+            phase: "instructing",
             startedAt: new Date().toISOString(),
           },
           isRestMode: false,

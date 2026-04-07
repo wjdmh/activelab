@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const activityLabel = isNonExerciser ? "일상 활동" : body.sportLabel;
 
     const ai = new GoogleGenAI({ apiKey });
-    const prompt = `너는 ON-U의 50~60대 액티브 시니어 전문 AI 피지컬 코치다.
+    const prompt = `너는 ON-U의 스포츠 재활·롱런 퍼포먼스 전문 AI 피지컬 코치다.
 사용자: ${body.nickname}, 활동: ${activityLabel}, 스포츠나이: ${body.sportsAge}세, 연속운동: ${body.streak}일
 오늘: ${dayOfWeek}요일
 상황: ${contextHints}

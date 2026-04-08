@@ -1,4 +1,5 @@
 import type { Gender } from "./user";
+import type { PostureResult } from "./posture";
 
 // 트랙 타입
 export type AssessmentTrack = "vitality" | "wellness";
@@ -85,6 +86,9 @@ export interface AssessmentData {
   // 레거시 호환
   ageGroup: string | null;
   goals: string[];
+
+  // 자세 분석 결과 (Vision AI)
+  postureResult?: PostureResult | null;
 }
 
 export const INITIAL_ASSESSMENT: AssessmentData = {

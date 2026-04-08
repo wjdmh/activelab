@@ -5,8 +5,13 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useAssessmentStore } from "@/stores/useAssessmentStore";
 import { useUserStore } from "@/stores/useUserStore";
+import { useWorkoutStore } from "@/stores/useWorkoutStore";
 import { useCoachStore } from "@/stores/useCoachStore";
 import { useHydration } from "@/hooks/useHydration";
+import { VisionCameraStep } from "@/components/assessment/steps/VisionCameraStep";
+import type { PostureResult } from "@/types/posture";
+import type { AssessmentData } from "@/types/assessment";
+import { classifyAcsmRisk } from "@/lib/acsm";
 
 // ===== 3D Coach Avatar =====
 function CoachAvatar({ size = 32 }: { size?: number }) {
@@ -343,12 +348,99 @@ const FITNESS_TESTS = [
 ];
 
 // ===== 10+ Step 하이브리드 플로우 =====
+// ===== chat userProfile → AssessmentData 변환 =====
+function buildAssessmentDataFromProfile(
+  profile: ReturnType<typeof useAssessmentStore.getState>["userProfile"],
+  postureResult: PostureResult | null
+): AssessmentData {
+  // 통증 부위: 한글 라벨 → id 역매핑
+  const PAIN_LABEL_TO_ID: Record<string, string> = {
+    무릎: "knee", 허리: "back", 어깨: "shoulder", 목: "neck",
+    고관절: "hip", 손목: "wrist", 없음: "none",
+  };
+  const painAreaIds = (profile.painAreas || [])
+    .map((l: string) => PAIN_LABEL_TO_ID[l] || l)
+    .filter((id: string) => id !== "none");
+
+  // 스포츠 → goalActivities 매핑
+  const SPORT_TO_GOAL: Record<string, string> = {
+    golf: "golf", running: "running", jogging: "running",
+    walking: "walking", hiking: "hiking", swimming: "swimming",
+    gym: "general", none: "general",
+  };
+  const mainGoal = SPORT_TO_GOAL[profile.sport || "none"] || "general";
+
+  // 운동수행능력 → fitnessLevel 매핑
+  const fitnessScore = profile.fitnessTest
+    ? Object.values(profile.fitnessTest as Record<string, number | null>)
+        .filter((v): v is number => v !== null)
+        .reduce((a, b) => a + b, 0) /
+      Math.max(Object.values(profile.fitnessTest as Record<string, number | null>).filter((v) => v !== null).length, 1)
+    : 50;
+  const fitnessLevel = fitnessScore >= 70 ? "good" : fitnessScore >= 45 ? "moderate" : "poor";
+
+  // ACSM 위험도: 자세 데이터 없으면 기본 green, 심한 자세 문제면 주의 추가
+  const acsmRiskLevel = classifyAcsmRisk({
+    activityLevel: profile.experience && profile.experience !== "none" ? "active" : "inactive",
+    conditions: [],
+    acsmSymptoms: [],
+  });
+
+  const birthYear = profile.age ? new Date().getFullYear() - profile.age : null;
+
+  return {
+    mode: "minimal",
+    activityLevel: profile.experience && profile.experience !== "none" ? "active" : "inactive",
+    acsmSymptoms: [],
+    acsmRiskLevel,
+    nickname: profile.nickname || "사용자",
+    gender: null,
+    birthYear,
+    height: profile.height || null,
+    weight: profile.weight || null,
+    track: null,
+    goalActivities: [mainGoal as AssessmentData["goalActivities"][number]],
+    specificGoals: [],
+    sports: profile.sport && profile.sport !== "none" ? [profile.sport] : [],
+    performanceConcerns: [],
+    customPerformanceConcern: "",
+    flexibilityLevel: fitnessLevel as AssessmentData["flexibilityLevel"],
+    lowerStrengthLevel: fitnessLevel as AssessmentData["lowerStrengthLevel"],
+    balanceLevel: fitnessLevel as AssessmentData["balanceLevel"],
+    conditions: [],
+    customCondition: "",
+    sarcfLift: null,
+    sarcfChair: null,
+    sarcfStair: null,
+    sarcfFall: null,
+    painAreas: painAreaIds,
+    customPainArea: "",
+    motivation: [profile.goal || ""],
+    customMotivation: "",
+    environment: null,
+    customEnvironment: "",
+    exerciseHistory: profile.sport && profile.sport !== "none" ? [profile.sport] : [],
+    customExerciseHistory: "",
+    availableTime: "30min",
+    freeNote: postureResult
+      ? `[자세 분석] 점수: ${postureResult.metrics.score}점 (${postureResult.grade}). ${postureResult.findings.join("; ")}`
+      : "",
+    ageGroup: null,
+    goals: [],
+    postureResult: postureResult ?? null,
+  };
+}
+
 function HybridChatFlow() {
   const router = useRouter();
   const { userProfile, updateProfile, setResult, addChatMessage } = useAssessmentStore();
+  const setVisionScanCompleted = useUserStore((s) => s.setVisionScanCompleted);
+  const setWeeklyPlan = useWorkoutStore((s) => s.setWeeklyPlan);
 
   const [messages, setMessages] = useState<{ id: string; role: "user" | "assistant"; content: string }[]>([]);
   const [step, setStep] = useState(1);
+  const [showVisionStep, setShowVisionStep] = useState(false);
+  const [pendingProfileForPlan, setPendingProfileForPlan] = useState<ReturnType<typeof useAssessmentStore.getState>["userProfile"] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [selectedPains, setSelectedPains] = useState<string[]>([]);
@@ -705,7 +797,7 @@ function HybridChatFlow() {
     requestAIQuestion(nextStep);
   };
 
-  // ===== 결과 생성 =====
+  // ===== 결과 생성 → Vision 단계로 전환 =====
   const handleGenerateResult = async () => {
     setIsGenerating(true);
     setShowResultButton(false);
@@ -728,11 +820,52 @@ function HybridChatFlow() {
         recommendations: data.recommendations || [],
         completedAt: new Date().toISOString(),
       });
-      router.push("/report");
+      // 평가 결과 저장 후 Vision 단계로 전환
+      setPendingProfileForPlan(profile);
+      setIsGenerating(false);
+      setShowVisionStep(true);
     } catch {
       setIsGenerating(false);
       addMsg("assistant", "결과 생성 중 문제가 발생했어요. 다시 시도해주세요.");
     }
+  };
+
+  // ===== Vision 완료 → 주간 플랜 생성 → /report =====
+  const handleVisionComplete = async (postureResult: PostureResult | null, skipped: boolean) => {
+    setShowVisionStep(false);
+    // 자세 스캔 완료 기록 (건너뛰어도 완료 처리 — 배너는 다시 안 뜸)
+    setVisionScanCompleted(postureResult);
+
+    const profile = pendingProfileForPlan ?? useAssessmentStore.getState().userProfile;
+
+    // 자세 데이터 Supabase 저장 (비동기, 실패해도 플로우 유지)
+    if (postureResult) {
+      fetch("/api/posture-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postureResult }),
+      }).catch(() => {});
+    }
+
+    // generate-plan: userProfile → AssessmentData 변환 후 호출
+    try {
+      const assessmentData = buildAssessmentDataFromProfile(profile, skipped ? null : postureResult);
+      const res = await fetch("/api/generate-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(assessmentData),
+      });
+      if (res.ok) {
+        const plan = await res.json();
+        if (plan.weeklyPlan) {
+          setWeeklyPlan(plan);
+        }
+      }
+    } catch {
+      // 플랜 생성 실패해도 /report로는 이동
+    }
+
+    router.push("/report");
   };
 
   // ===== 입력 영역 렌더링 =====
@@ -941,6 +1074,34 @@ function HybridChatFlow() {
       </div>
 
       {renderInputArea()}
+
+      {/* ── Vision 분석 오버레이 ── */}
+      <AnimatePresence>
+        {showVisionStep && (
+          <motion.div
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 60 }}
+            className="fixed inset-0 z-50 bg-bg-page flex flex-col"
+          >
+            {/* 헤더 */}
+            <div className="sticky top-0 bg-bg-page/90 backdrop-blur-xl">
+              <div className="flex items-center h-[52px] px-4">
+                <div className="w-10" />
+                <div className="flex-1 text-center">
+                  <span className="text-[15px] font-semibold text-text-secondary">체형·자세 분석</span>
+                </div>
+                <div className="w-10" />
+              </div>
+              <div className="h-[2px] bg-primary" />
+            </div>
+            {/* Vision 컴포넌트 */}
+            <div className="flex-1 px-5 py-6 overflow-y-auto">
+              <VisionCameraStep onComplete={handleVisionComplete} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

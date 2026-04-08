@@ -4,18 +4,22 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, UserPreferences } from "@/types/user";
+import type { PostureResult } from "@/types/posture";
 
 interface UserState {
   profile: UserProfile | null;
   preferences: UserPreferences;
   hasCompletedAssessment: boolean;
-  visionScanSkipped: boolean;   // 카메라 체형 검사 건너뜀 여부
+  /** true: 스캔 완료, false: 스캔 안 함/건너뜀 (배너 표시 여부 기준) */
+  visionScanCompleted: boolean;
+  /** 최근 자세 분석 결과 */
+  postureResult: PostureResult | null;
 
   // Actions
   setProfile: (profile: UserProfile) => void;
   updatePreferences: (prefs: Partial<UserPreferences>) => void;
   setAssessmentComplete: () => void;
-  setVisionScanSkipped: (v: boolean) => void;
+  setVisionScanCompleted: (result: PostureResult | null) => void;
   resetAll: () => void;
 
   // Supabase Sync
@@ -31,7 +35,8 @@ export const useUserStore = create<UserState>()(
         fontSize: "large",
       },
       hasCompletedAssessment: false,
-      visionScanSkipped: false,
+      visionScanCompleted: false,
+      postureResult: null,
 
       setProfile: (profile) => set({ profile }),
 
@@ -41,13 +46,14 @@ export const useUserStore = create<UserState>()(
         })),
 
       setAssessmentComplete: () => set({ hasCompletedAssessment: true }),
-      setVisionScanSkipped: (v) => set({ visionScanSkipped: v }),
+      setVisionScanCompleted: (result: PostureResult | null) => set({ visionScanCompleted: true, postureResult: result }),
 
       resetAll: () =>
         set({
           profile: null,
           hasCompletedAssessment: false,
-          visionScanSkipped: false,
+          visionScanCompleted: false,
+          postureResult: null,
           preferences: { theme: "light", fontSize: "large" },
         }),
 
@@ -105,7 +111,8 @@ export const useUserStore = create<UserState>()(
         profile: state.profile,
         preferences: state.preferences,
         hasCompletedAssessment: state.hasCompletedAssessment,
-        visionScanSkipped: state.visionScanSkipped,
+        visionScanCompleted: state.visionScanCompleted,
+        postureResult: state.postureResult,
       }),
     }
   )

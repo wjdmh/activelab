@@ -48,7 +48,7 @@ export function WizardContainer() {
 
   const setProfile = useUserStore((s) => s.setProfile);
   const setAssessmentComplete = useUserStore((s) => s.setAssessmentComplete);
-  const setVisionScanSkipped = useUserStore((s) => s.setVisionScanSkipped);
+  const setVisionScanCompleted = useUserStore((s) => s.setVisionScanCompleted);
   const setWeeklyPlan = useWorkoutStore((s) => s.setWeeklyPlan);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -65,8 +65,8 @@ export function WizardContainer() {
   };
 
   // Vision 스텝 완료 후 실제 플랜 생성
-  const handleVisionComplete = async (skipped: boolean) => {
-    setVisionScanSkipped(skipped);
+  const handleVisionComplete = async (result: import("@/types/posture").PostureResult | null, skipped: boolean) => {
+    setVisionScanCompleted(skipped ? null : result);
     setShowVisionStep(false);
     await generatePlan(skipped);
   };

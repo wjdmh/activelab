@@ -1,6 +1,43 @@
 import type { AssessmentData } from "@/types/assessment";
+import type { PostureResult } from "@/types/posture";
 import { GOAL_ACTIVITY_OPTIONS, SPECIFIC_GOAL_OPTIONS } from "@/types/assessment";
 import { getAcsmPrescriptionConstraints, getSpecialConditionConstraints } from "@/lib/acsm";
+
+/**
+ * 자세 분석 결과를 프롬프트 지시문으로 변환
+ */
+function buildPostureConstraints(postureResult: PostureResult | null | undefined): string {
+  if (!postureResult) return "";
+
+  const { metrics, findings, grade } = postureResult;
+  const parts: string[] = [];
+
+  parts.push(`
+[📸 Vision AI 자세 분석 결과 반영]
+- 자세 점수: ${metrics.score}/100점 (${grade === "good" ? "균형 잡힘" : grade === "fair" ? "보통" : "교정 필요"})
+- 주요 소견: ${findings.join("; ")}`);
+
+  // 전방 두부
+  if (metrics.forwardHead > 0.12) {
+    parts.push(`- **전방 두부 자세**: 목·어깨 스트레칭(흉쇄유돌근, 승모근 이완)과 심부 경부 굴근 강화 운동을 매일 포함하세요.`);
+  }
+
+  // 어깨 비대칭
+  if (metrics.shoulderAsymmetry > 0.03) {
+    parts.push(`- **어깨 비대칭**: 좌우 대칭 강화를 위해 단방향 덤벨/밴드 운동(낮은 쪽 먼저)을 포함하세요. 어깨 충돌 유발 동작(오버헤드 프레스 등) 주의.`);
+  }
+
+  // 골반 비대칭
+  if (metrics.hipAsymmetry > 0.025) {
+    parts.push(`- **골반 기울기**: 고관절 외전근(둔근 중부) 강화와 요방형근 스트레칭을 포함하세요. 단관절 밸런스 훈련 우선.`);
+  }
+
+  if (grade === "needs_attention") {
+    parts.push(`- ⚠️ 전반적으로 자세 교정이 우선입니다. 첫 2주는 자세 교정 운동 비중을 본운동의 30% 이상으로 구성하세요.`);
+  }
+
+  return parts.join("\n");
+}
 
 const GENDER_MAP: Record<string, string> = {
   male: "남성",
@@ -134,12 +171,14 @@ export function buildMinimalPrompt(data: AssessmentData): string {
 
   const acsmConstraints = getAcsmPrescriptionConstraints(data.acsmRiskLevel ?? null);
   const specialConstraints = getSpecialConditionConstraints(data.conditions || []);
+  const postureConstraints = buildPostureConstraints(data.postureResult);
 
   return `너는 ACSM(미국 스포츠의학회) 11판 가이드라인을 따르는 스포츠 재활·롱런 퍼포먼스 전문 피지컬 코치다.
 사용자의 목표와 건강 상태를 기반으로, 부상 없이 오래 스포츠를 즐길 수 있도록 안전하고 효과적인 7일 운동 프로그램을 설계한다.
 
 ${acsmConstraints}
 ${specialConstraints}
+${postureConstraints}
 
 ## [사용자 정보]
 - **닉네임**: ${data.nickname}
@@ -283,12 +322,14 @@ export function buildPrompt(data: AssessmentData): string {
 
   const acsmConstraints = getAcsmPrescriptionConstraints(data.acsmRiskLevel ?? null);
   const specialConstraints = getSpecialConditionConstraints(data.conditions || []);
+  const postureConstraints = buildPostureConstraints(data.postureResult);
 
   return `너는 ACSM(미국 스포츠의학회) 11판 가이드라인을 따르는 스포츠 재활·롱런 퍼포먼스 전문 피지컬 코치다.
 사용자가 **부상 없이 건강하게 스포츠를 즐기며 롱런 퍼포먼스**를 유지할 수 있도록 돕는다.
 
 ${acsmConstraints}
 ${specialConstraints}
+${postureConstraints}
 
 ## [핵심 처방 원칙]
 1. **준비운동 → 본운동 → 마무리운동** 순서를 반드시 지켜라

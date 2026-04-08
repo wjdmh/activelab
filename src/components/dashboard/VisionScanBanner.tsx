@@ -4,19 +4,28 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { VisionCameraStep } from "@/components/assessment/steps/VisionCameraStep";
 import { useUserStore } from "@/stores/useUserStore";
+import type { PostureResult } from "@/types/posture";
 
 export function VisionScanBanner() {
-  const visionScanSkipped = useUserStore((s) => s.visionScanSkipped);
-  const setVisionScanSkipped = useUserStore((s) => s.setVisionScanSkipped);
+  const visionScanCompleted = useUserStore((s) => s.visionScanCompleted);
+  const setVisionScanCompleted = useUserStore((s) => s.setVisionScanCompleted);
   const [showScanner, setShowScanner] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  // 스캔 완료 또는 사용자가 배너를 닫으면 숨김
-  if (!visionScanSkipped || dismissed) return null;
+  // 스캔 완료했거나 배너 닫은 경우 숨김
+  // 미완료 사용자 전체(기존 + 신규 건너뜀)에게 표시
+  if (visionScanCompleted || dismissed) return null;
 
-  const handleComplete = (skipped: boolean) => {
+  const handleComplete = (result: PostureResult | null, skipped: boolean) => {
     if (!skipped) {
-      setVisionScanSkipped(false); // 완료했으므로 배너 제거
+      setVisionScanCompleted(result);
+      if (result) {
+        fetch("/api/posture-scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ postureResult: result }),
+        }).catch(() => {});
+      }
     }
     setShowScanner(false);
   };
@@ -76,10 +85,10 @@ export function VisionScanBanner() {
           </div>
           <div className="flex-1">
             <p className="text-[14px] font-bold text-text-primary leading-tight mb-1">
-              보다 정확한 운동을 위해 카메라 검사를 진행해주세요
+              AI가 체형·자세를 분석해 처방을 정밀화해요
             </p>
             <p className="text-[12px] text-text-caption mb-3">
-              체형·자세 분석으로 처방 정확도가 높아져요
+              전방 두부·어깨·골반 균형을 AI로 확인해요
             </p>
             <button
               onClick={() => setShowScanner(true)}

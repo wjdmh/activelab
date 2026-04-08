@@ -10,7 +10,8 @@ const WASM_PATH = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.34/
 const MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
 
-let landmarkerPromise: Promise<import("@mediapipe/tasks-vision").PoseLandmarker> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let landmarkerPromise: Promise<any> | null = null;
 
 export async function getPoseLandmarker() {
   if (landmarkerPromise) return landmarkerPromise;

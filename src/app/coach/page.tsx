@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useAssessmentStore } from "@/stores/useAssessmentStore";
+import type { UserProfile } from "@/stores/useAssessmentStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useWorkoutStore } from "@/stores/useWorkoutStore";
 import { useCoachStore } from "@/stores/useCoachStore";
@@ -350,7 +351,7 @@ const FITNESS_TESTS = [
 // ===== 10+ Step 하이브리드 플로우 =====
 // ===== chat userProfile → AssessmentData 변환 =====
 function buildAssessmentDataFromProfile(
-  profile: ReturnType<typeof useAssessmentStore.getState>["userProfile"],
+  profile: UserProfile,
   postureResult: PostureResult | null
 ): AssessmentData {
   // 통증 부위: 한글 라벨 → id 역매핑
@@ -440,7 +441,7 @@ function HybridChatFlow() {
   const [messages, setMessages] = useState<{ id: string; role: "user" | "assistant"; content: string }[]>([]);
   const [step, setStep] = useState(1);
   const [showVisionStep, setShowVisionStep] = useState(false);
-  const [pendingProfileForPlan, setPendingProfileForPlan] = useState<ReturnType<typeof useAssessmentStore.getState>["userProfile"] | null>(null);
+  const [pendingProfileForPlan, setPendingProfileForPlan] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [selectedPains, setSelectedPains] = useState<string[]>([]);
@@ -1150,14 +1151,22 @@ function CoachChat() {
         body: JSON.stringify({
           message: text.trim(),
           nickname,
-          context: { sport: result?.profile?.sportLabel, painAreas: result?.profile?.painAreas, goal: result?.profile?.goal },
+          context: {
+            sports: result?.profile?.sportLabel ? [result.profile.sportLabel] : [],
+            painAreas: result?.profile?.painAreas || [],
+            goalActivities: result?.profile?.goal ? [result.profile.goal] : [],
+          },
           history: messages.slice(-10).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
+      if (!res.ok) {
+        throw new Error(`API 오류: ${res.status}`);
+      }
       const data = await res.json();
       addMessage({ role: "assistant", content: data.reply || "답변을 받지 못했어요." });
-    } catch {
-      addMessage({ role: "assistant", content: "인터넷 연결을 확인해주세요." });
+    } catch (err) {
+      console.error("Coach chat error:", err);
+      addMessage({ role: "assistant", content: "잠시 문제가 생겼어요. 다시 한번 말씀해주세요." });
     } finally { setLoading(false); }
   };
 

@@ -50,6 +50,16 @@ export function VisionCameraStep({ onComplete }: VisionCameraStepProps) {
       .finally(() => setModelLoading(false));
   }, []);
 
+  // phase가 countdown/analyzing으로 바뀐 뒤 video 엘리먼트가 DOM에 마운트되면 stream 연결
+  useEffect(() => {
+    if ((phase === "countdown" || phase === "analyzing") && videoRef.current && streamRef.current) {
+      if (!videoRef.current.srcObject) {
+        videoRef.current.srcObject = streamRef.current;
+        videoRef.current.play().catch(() => {});
+      }
+    }
+  }, [phase]);
+
   const startCamera = async () => {
     setPhase("permission");
     setError(null);
@@ -58,10 +68,8 @@ export function VisionCameraStep({ onComplete }: VisionCameraStepProps) {
         video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      // phase를 먼저 countdown으로 바꿔서 video 엘리먼트를 DOM에 마운트시킨 뒤
+      // useEffect에서 srcObject를 연결함
       startCountdown();
     } catch {
       setError("카메라 접근이 거부되었어요. 설정에서 권한을 허용해 주세요.");

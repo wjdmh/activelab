@@ -19,14 +19,20 @@ export async function getPoseLandmarker() {
   landmarkerPromise = (async () => {
     const { FilesetResolver, PoseLandmarker } = await import("@mediapipe/tasks-vision");
     const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
-    return PoseLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: MODEL_URL,
-        delegate: "GPU",
-      },
-      runningMode: "IMAGE",
-      numPoses: 1,
-    });
+    // GPU 우선 시도, 모바일 브라우저 실패 시 CPU로 폴백
+    try {
+      return await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: "GPU" },
+        runningMode: "IMAGE",
+        numPoses: 1,
+      });
+    } catch {
+      return await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: "CPU" },
+        runningMode: "IMAGE",
+        numPoses: 1,
+      });
+    }
   })();
 
   return landmarkerPromise;
@@ -40,6 +46,13 @@ export async function analyzePostureFromVideo(
   video: HTMLVideoElement
 ): Promise<PostureResult | null> {
   try {
+    // video가 충분히 로드될 때까지 대기 (readyState >= HAVE_CURRENT_DATA)
+    if (video.readyState < 2) {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("video timeout")), 5000);
+        video.addEventListener("canplay", () => { clearTimeout(timeout); resolve(); }, { once: true });
+      });
+    }
     const landmarker = await getPoseLandmarker();
     const result = landmarker.detect(video);
 
